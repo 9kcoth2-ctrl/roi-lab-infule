@@ -295,6 +295,46 @@
   .toast.show{opacity:1;transform:translateY(0);}
   .toast.success{border-color:var(--good);box-shadow:4px 4px 0 var(--good);}
   .toast.error{border-color:var(--bad);box-shadow:4px 4px 0 var(--bad);}
+
+  /* DARK MODE */
+  body.dark {
+    --bg:#1A1815; --ink:#F4F1EA; --paper:#242220; --line:#3A3835;
+    --muted:#8A8780; --accent:#FF5C2B;
+    background-image:radial-gradient(circle at 1px 1px,rgba(251,249,244,0.05) 1px,transparent 0);
+  }
+  body.dark input,body.dark select,body.dark textarea{background:#2A2825;color:#F4F1EA;border-color:#3A3835;}
+  body.dark input:focus,body.dark select:focus{background:#323028;box-shadow:3px 3px 0 var(--accent);}
+  body.dark .login-card{background:#242220;}
+  body.dark .profile-card{background:#242220;}
+  body.dark .avg-helper{background:#242220;}
+  body.dark .avg-helper-head{background:#1A1815;}
+  body.dark .avg-helper-body{background:#242220;}
+  body.dark .avg-btn{background:#2A2825;color:#F4F1EA;}
+  body.dark .avg-clip-list{background:#1A1815;}
+  body.dark .breakdown{background:#242220;}
+  body.dark .copy-bridge{background:#242220;}
+  body.dark .verdict{background:#242220;}
+  body.dark .metrics{background:#242220;}
+  body.dark .metric{background:#242220;}
+  body.dark .empty-state{background:#242220;}
+  body.dark .panel{background:#242220;}
+  body.dark header{background:#242220;}
+  body.dark .tabs{background:#1A1815;}
+  body.dark .mode-label{background:#242220;}
+  body.dark .person-bar{background:#242220;}
+  body.dark .bulk-export-bar{background:#0A0805;}
+  body.dark .table-wrap{background:#242220;}
+  body.dark .user-table td{border-color:rgba(251,249,244,0.08);}
+  body.dark .user-table tr:hover td{background:rgba(255,92,43,0.08);}
+  body.dark #user-modal > div{background:#242220;}
+  body.dark .avg-result{background:#242220;}
+  body.dark .person-tab-pill{background:#2A2825;color:#A0A09A;}
+  body.dark .person-tab-pill.active{background:#F4F1EA;color:#1A1815;}
+  body.dark .calc-btn.secondary{background:#242220;color:#F4F1EA;}
+  body.dark .export-btn{background:#242220;color:#F4F1EA;}
+  body.dark .step-desc{background:#242220;}
+  .theme-toggle{border:1.5px solid var(--line);background:transparent;padding:7px 12px;cursor:pointer;font-size:15px;transition:all 0.15s;color:var(--ink);line-height:1;}
+  .theme-toggle:hover{background:var(--ink);color:var(--paper);}
   .footnote{margin-top:20px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-align:center;letter-spacing:0.05em;line-height:1.6;}
 </style>
 </head>
@@ -306,6 +346,7 @@
     <div class="login-brand">
       <div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.1z"/></svg></div>
       <div class="brand-text"><h1>Influencer ROI Lab</h1><p>เข้าถึงได้เฉพาะทีมงาน</p></div>
+      <button class="theme-toggle" onclick="toggleTheme()" style="margin-left:auto" title="เปลี่ยนธีม" id="login-theme-btn">🌙</button>
     </div>
     <div class="login-card">
       <h2>เข้าสู่ระบบ</h2>
@@ -333,7 +374,7 @@
         <button class="tab-btn active" id="tab-calc-btn" onclick="switchTab('calc')">📊 คำนวณ <span class="badge">ROI</span></button>
         <button class="tab-btn hidden" id="tab-admin-btn" onclick="switchTab('admin')">⚙️ จัดการ User <span class="badge">ADMIN</span></button>
       </div>
-      <button class="btn-logout" onclick="doLogout()">ออกจากระบบ</button>
+      <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="เปลี่ยนธีม">🌙</button><button class="btn-logout" onclick="doLogout()">ออกจากระบบ</button>
     </div>
   </header>
 
@@ -512,8 +553,8 @@
               <div class="metric-label">View / Follower</div>
               <div class="metric-value"><span id="m-vf">—</span><span class="unit">%</span></div>
               <div id="m-vf-bench" class="metric-bench">—</div>
-              <div class="metric-explain">ยอดวิวเฉลี่ยคิดเป็นกี่ % ของ followers — ถ้าต่ำมาก อาจมี followers ที่ซื้อมาหรือ inactive</div>
-              <div class="metric-bench" style="color:var(--muted);margin-top:4px">&gt;10% ปกติ · 5–10% ต่ำ · &lt;5% เสี่ยง</div>
+              <div class="metric-explain">ยอดวิวเทียบกับ followers — TikTok ปกติวิวจะเกิน followers มากเพราะ algorithm ส่งให้คนนอก followers ด้วย · ถ้าต่ำกว่า 50% ควรระวัง</div>
+              <div class="metric-bench" style="color:var(--muted);margin-top:4px">&gt;100% ปกติ TikTok · 50–100% ต่ำ · &lt;20% เสี่ยง</div>
             </div>
           </div>
 
@@ -921,44 +962,44 @@ function calculate(){
   const reasons = [];
 
   // 1. Engagement Rate (weight 25)
-  if(erPct >= 5){score+=15;reasons.push(['pos',`Engagement Rate ${erPct.toFixed(1)}% — Excellent (benchmark >5%)`]);}
-  else if(erPct >= 3){score+=5;reasons.push(['neu',`Engagement Rate ${erPct.toFixed(1)}% — Normal range (3-5%)`]);}
-  else if(erPct > 0){score-=15;reasons.push(['neg',`Engagement Rate ${erPct.toFixed(1)}% — Below benchmark (<3%), be cautious`]);}
-  else{reasons.push(['neu','No followers data — cannot calculate ER yet']);}
+  if(erPct >= 5){score+=15;reasons.push(['pos',`Engagement Rate ${erPct.toFixed(1)}% — ดีมาก (เกณฑ์ >5%)`]);}
+  else if(erPct >= 3){score+=5;reasons.push(['neu',`Engagement Rate ${erPct.toFixed(1)}% — ปกติ (3-5%)`]);}
+  else if(erPct > 0){score-=15;reasons.push(['neg',`Engagement Rate ${erPct.toFixed(1)}% — ต่ำกว่าเกณฑ์ (<3%) ควรระวัง`]);}
+  else{reasons.push(['neu','ยังไม่ได้ใส่ followers — คำนวณ ER ไม่ได้']);}
 
   // 2. CPM (weight 25) — fixed market benchmarks
   if(cpm!==null){
-    if(cpm<50){score+=15;reasons.push(['pos',`CPM B${cpm.toFixed(0)} — Very cheap (<B50), excellent value`]);}
-    else if(cpm<=100){score+=8;reasons.push(['neu',`CPM B${cpm.toFixed(0)} — Market rate (B50-100)`]);}
-    else if(cpm<=200){score-=8;reasons.push(['neu',`CPM B${cpm.toFixed(0)} — Slightly high (B100-200), try negotiating`]);}
-    else{score-=18;reasons.push(['neg',`CPM B${cpm.toFixed(0)} — Too expensive (>B200), negotiate price`]);}
+    if(cpm<50){score+=15;reasons.push(['pos',`CPM ฿${cpm.toFixed(0)} — ถูกมาก (<฿50) คุ้มมาก`]);}
+    else if(cpm<=100){score+=8;reasons.push(['neu',`CPM ฿${cpm.toFixed(0)} — ราคาตลาด (฿50-100)`]);}
+    else if(cpm<=200){score-=8;reasons.push(['neu',`CPM ฿${cpm.toFixed(0)} — แพงไปนิด (฿100-200) ลองต่อรอง`]);}
+    else{score-=18;reasons.push(['neg',`CPM ฿${cpm.toFixed(0)} — แพงเกินไป (>฿200) ควรต่อรองราคา`]);}
   }
 
   // 3. CPE (weight 20)
   if(cpe!==null){
-    if(cpe<10){score+=10;reasons.push(['pos',`CPE B${cpe.toFixed(2)} — Excellent (<B10 per engagement)`]);}
-    else if(cpe<=30){score+=3;reasons.push(['neu',`CPE B${cpe.toFixed(2)} — Normal (B10-30 per engagement)`]);}
-    else{score-=10;reasons.push(['neg',`CPE B${cpe.toFixed(2)} — Expensive (>B30), high cost per engagement`]);}
+    if(cpe<10){score+=10;reasons.push(['pos',`CPE ฿${cpe.toFixed(2)} — ดีมาก (<฿10 ต่อ engagement)`]);}
+    else if(cpe<=30){score+=3;reasons.push(['neu',`CPE ฿${cpe.toFixed(2)} — ปกติ (฿10-30 ต่อ engagement)`]);}
+    else{score-=10;reasons.push(['neg',`CPE ฿${cpe.toFixed(2)} — แพง (>฿30) ต้นทุนต่อ engagement สูง`]);}
   }
 
-  // 4. View/Follower ratio — fake follower detection (weight 20)
+  // 4. View/Follower ratio — TikTok algorithm pushes content beyond followers, >100% is normal
   let ffLevel=null,ffTitle='',ffDesc='';
   if(vfRatio!==null && followers>=1000){
-    if(vfRatio<5){
+    if(vfRatio<20){
       ffLevel='low'; score-=12;
       ffTitle='สัญญาณเตือน: View/Follower ต่ำมาก';
-      ffDesc=`Views เพียง ${vfRatio.toFixed(1)}% ของ followers — เสี่ยงมี followers ที่ไม่ active หรืออาจซื้อมา (ค่าปกติ >10%)`;
-      reasons.push(['neg',`View/Follower ${vfRatio.toFixed(1)}% — Very low, possible fake followers`]);
-    } else if(vfRatio<10){
+      ffDesc=`Views เพียง ${vfRatio.toFixed(1)}% ของ followers — TikTok ปกติวิวจะเกิน followers มาก ถ้าต่ำกว่านี้เสี่ยง followers ไม่จริง (ค่าปกติ >100%)`;
+      reasons.push(['neg',`View/Follower ${vfRatio.toFixed(1)}% — ต่ำมากสำหรับ TikTok เสี่ยง followers ไม่จริง`]);
+    } else if(vfRatio<50){
       ffLevel='mid'; score-=4;
       ffTitle='View/Follower ค่อนข้างต่ำ';
-      ffDesc=`Views ${vfRatio.toFixed(1)}% ของ followers — ควรขอดู Insight เพิ่มเติมก่อนตัดสินใจ (ค่าปกติ 10–30%)`;
-      reasons.push(['neu',`View/Follower ${vfRatio.toFixed(1)}% — Below average, request further verification`]);
+      ffDesc=`Views ${vfRatio.toFixed(1)}% ของ followers — ต่ำกว่าค่าเฉลี่ย TikTok ควรขอดู Insight เพิ่มเติม (ปกติ >100%)`;
+      reasons.push(['neu',`View/Follower ${vfRatio.toFixed(1)}% — ต่ำกว่าค่าเฉลี่ย TikTok ควรตรวจสอบเพิ่มเติม`]);
     } else {
       ffLevel='high'; score+=5;
       ffTitle='View/Follower อยู่ในเกณฑ์ดี';
-      ffDesc=`Views ${vfRatio.toFixed(1)}% ของ followers — สัดส่วนปกติ น่าเชื่อถือ`;
-      reasons.push(['pos',`View/Follower ${vfRatio.toFixed(1)}% — Normal ratio, followers look authentic`]);
+      ffDesc=`Views ${vfRatio.toFixed(1)}% ของ followers — TikTok algorithm กระจายคอนเทนต์ได้ดี น่าเชื่อถือ`;
+      reasons.push(['pos',`View/Follower ${vfRatio.toFixed(1)}% — ดี algorithm TikTok กระจายคอนเทนต์ได้ดี`]);
     }
   }
 
@@ -1012,30 +1053,11 @@ function calculate(){
   sb2('m-cpe-bench', cpe!==null?(cpe<10?'ดีมาก':cpe<=30?'ปกติ':'แพง'):'—', cpe!==null?(cpe<10?'good':cpe<=30?'mid':'bad'):'');
 
   sm('m-vf', vfRatio!==null?vfRatio.toFixed(1):'—');
-  sb2('m-vf-bench', vfRatio!==null?(vfRatio>=10?'สัดส่วนปกติ':vfRatio>=5?'ค่อนข้างต่ำ':'ต่ำมาก เสี่ยง'):'—', vfRatio!==null?(vfRatio>=10?'good':vfRatio>=5?'mid':'bad'):'');
+  sb2('m-vf-bench', vfRatio!==null?(vfRatio>=50?'ดี — algorithm กระจายได้':vfRatio>=20?'ค่อนข้างต่ำ':'ต่ำมาก เสี่ยง'):'—', vfRatio!==null?(vfRatio>=50?'good':vfRatio>=20?'mid':'bad'):'');
 
-  document.getElementById('reason-list').innerHTML=reasons.map(([t,txt])=>{
-    // Thai display translations
-    const thTxt = txt
-      .replace('Excellent (benchmark >5%)','ดีมาก (เกณฑ์ >5%)')
-      .replace('Normal range (3-5%)','ปกติ (3–5%)')
-      .replace('Below benchmark (<3%), be cautious','ต่ำกว่าเกณฑ์ ควรระวัง')
-      .replace('No followers data — cannot calculate ER yet','ยังไม่ได้ใส่ followers — คำนวณ ER ไม่ได้')
-      .replace(/CPM B(\d+) — Very cheap \(<B50\), excellent value/,'CPM ฿$1 — ถูกมาก คุ้มมาก')
-      .replace(/CPM B(\d+) — Market rate \(B50-100\)/,'CPM ฿$1 — ราคาตลาด')
-      .replace(/CPM B(\d+) — Slightly high \(B100-200\), try negotiating/,'CPM ฿$1 — แพงไปนิด ลองต่อรอง')
-      .replace(/CPM B(\d+) — Too expensive \(>B200\), negotiate price/,'CPM ฿$1 — แพงเกินไป ควรต่อรอง')
-      .replace(/CPM is at or below your target \(B(\d+)\)/,'CPM อยู่ในหรือต่ำกว่าเป้า (฿$1)')
-      .replace(/CPM exceeds your target \(target B(\d+)\)/,'CPM เกินกว่าเป้าที่ตั้งไว้ (฿$1)')
-      .replace(/CPE B([\d.]+) — Excellent \(<B10 per engagement\)/,'CPE ฿$1 — ดีมาก')
-      .replace(/CPE B([\d.]+) — Normal \(B10-30 per engagement\)/,'CPE ฿$1 — ปกติ')
-      .replace(/CPE B([\d.]+) — Expensive \(>B30\), high cost per engagement/,'CPE ฿$1 — แพง ต้นทุน/engagement สูง')
-      .replace(/View\/Follower ([\d.]+)% — Very low, possible fake followers/,'View/Follower $1% — ต่ำมาก เสี่ยง followers ไม่จริง')
-      .replace(/View\/Follower ([\d.]+)% — Below average, request further verification/,'View/Follower $1% — ต่ำกว่าเกณฑ์ ควรตรวจสอบเพิ่มเติม')
-      .replace(/View\/Follower ([\d.]+)% — Normal ratio, followers look authentic/,'View/Follower $1% — สัดส่วนปกติ น่าเชื่อถือ')
-      .replace('Engagement Rate','Engagement Rate');
-    return `<li><span class="reason-icon ${t}">${t==='pos'?'+':t==='neg'?'−':'~'}</span><span>${thTxt}</span></li>`;
-  }).join('');
+  document.getElementById('reason-list').innerHTML=reasons.map(([t,txt])=>
+    `<li><span class="reason-icon ${t}">${t==='pos'?'+':t==='neg'?'−':'~'}</span><span>${txt}</span></li>`
+  ).join('');
 
   renderPersonTabs();
 }
@@ -1069,7 +1091,7 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
   doc.setTextColor(255,92,43);
   doc.text('PRE-HIRE EVALUATION', M, 17);
   doc.setTextColor(...COLOR.paper);
-  const today = new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+  const d=new Date(); const today=`${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543}`;
   doc.text(today, W-M, 11, {align:'right'});
   doc.text(`Generated by ${currentUser?.email||'—'}`, W-M, 17, {align:'right'});
   y = 36;
@@ -1084,7 +1106,7 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
   doc.text(pd.channelName||pd.handle||pd.profileUrl||'Unknown Channel', M+2, y+13);
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...COLOR.muted);
   if(pd.profileUrl){doc.textWithLink(pd.profileUrl, M+2, y+19, {url:pd.profileUrl});}
-  else{doc.text('No link provided', M+2, y+19);}
+  else{doc.text('ไม่ได้ระบุลิงก์', M+2, y+19);}
   doc.setTextColor(...COLOR.ink); doc.setFontSize(7.5);
   doc.text(`Followers: ${fmtN(c.followers)}  |  Avg Views: ${fmtN(c.avgViews)}  |  ER: ${c.erPct.toFixed(1)}%  |  Contents: ${c.count}  |  Fee: B${fmtN(c.totalFee)}`, M+2, y+23);
   y += 30;
@@ -1093,10 +1115,10 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
   const vColor = COLOR[c.vClass]||COLOR.mid;
   doc.setFillColor(...vColor); doc.rect(M,y,W-M*2,22,'F');
   doc.setTextColor(...COLOR.paper); doc.setFont('helvetica','bold'); doc.setFontSize(6.5);
-  doc.text('VERDICT', M+3, y+5);
-  doc.setFontSize(20); doc.text(c.vClass==='good'?'WORTH IT':c.vClass==='mid'?'BORDERLINE':'NOT WORTH IT', M+3, y+14);
+  doc.text('ผลการประเมิน', M+3, y+5);
+  doc.setFontSize(20); doc.text(c.vClass==='good'?'คุ้มค่า':c.vClass==='mid'?'พอได้':'ไม่คุ้ม', M+3, y+14);
   doc.setFont('helvetica','normal'); doc.setFontSize(8);
-  doc.text(c.vClass==='good'?'Numbers indicate a good hire':c.vClass==='mid'?'Some points need consideration':'Numbers suggest negotiating or finding alternatives', M+3, y+19);
+  doc.text(c.vClass==='good'?'ตัวเลขบ่งชี้ว่าน่าจ้าง':c.vClass==='mid'?'มีจุดที่ควรพิจารณาเพิ่มเติม':'ตัวเลขยังไม่น่าจ้าง ควรต่อรอง', M+3, y+19);
   doc.setFont('helvetica','bold'); doc.setFontSize(30);
   doc.text(String(c.score), W-M-3, y+15, {align:'right'});
   doc.setFontSize(8); doc.setFont('helvetica','normal');
@@ -1106,9 +1128,9 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
   // Metrics grid (2×2)
   const colW=(W-M*2)/2, rowH=22;
   const metrics=[
-    ['Engagement Rate',     c.erPct>0?c.erPct.toFixed(1)+'%':'—',    c.erPct>=5?'Excellent':c.erPct>=3?'Normal':'Below avg',   '5%+ Excellent · 3-5% Normal · <3% Low'],
-    ['CPM (B/1,000 views)', c.cpm!==null?'B'+fmtN(c.cpm,0):'—',     c.cpm!==null?(c.cpm<50?'Very cheap (< B50)':c.cpm<=100?'Market rate (B50-100)':c.cpm<=200?'A bit high (B100-200)':'Too expensive (>B200)'):'—', '<50 Cheap · 50-100 Market · >200 Expensive'],
-    ['CPE (B/engagement)',  c.cpe!==null?'B'+fmtN(c.cpe,2):'—',     c.cpe!==null?(c.cpe<10?'Excellent':c.cpe<=30?'Normal':'Expensive'):'—', '<10 Excellent · 10-30 Normal · >30 Expensive'],
+    ['Engagement Rate',     c.erPct>0?c.erPct.toFixed(1)+'%':'—',    c.erPct>=5?'ดีมาก':c.erPct>=3?'ปกติ':'ต่ำกว่าเกณฑ์',   '5%+ ดีมาก · 3-5% ปกติ · <3% ต่ำ'],
+    ['CPM (฿/1,000 วิว)',   c.cpm!==null?'฿'+fmtN(c.cpm,0):'—',     c.cpm!==null?(c.cpm<50?'ถูกมาก (<฿50)':c.cpm<=100?'ราคาตลาด (฿50-100)':c.cpm<=200?'แพงไปนิด (฿100-200)':'แพงเกินไป (>฿200)'):'—', '<50 ถูกมาก · 50-100 ตลาด · >200 แพง'],
+    ['CPE (฿/engagement)',  c.cpe!==null?'฿'+fmtN(c.cpe,2):'—',     c.cpe!==null?(c.cpe<10?'ดีมาก':c.cpe<=30?'ปกติ':'แพง'):'—', '<฿10 ดีมาก · ฿10-30 ปกติ · >฿30 แพง'],
     ['View/Follower',       c.vfRatio!==null?c.vfRatio.toFixed(1)+'%':'—', c.vfRatio!==null?(c.vfRatio>=10?'Normal':c.vfRatio>=5?'Below avg':'Low - risky'):'—', '>10% Normal · 5-10% Low · <5% Risky']
   ];
   metrics.forEach((m,i)=>{
@@ -1130,7 +1152,7 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
   doc.setFillColor(244,241,234); doc.setDrawColor(...COLOR.ink); doc.setLineWidth(0.4);
   doc.rect(M,y,W-M*2,12,'FD');
   doc.setTextColor(...COLOR.muted); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-  doc.text('TOTAL FEE',M+2,y+4); doc.text('TOTAL VIEWS',M+48,y+4); doc.text('TOTAL ENGAGEMENT',M+95,y+4);
+  doc.text('ค่าจ้างรวม',M+2,y+4); doc.text('ยอดวิวรวม',M+48,y+4); doc.text('Engagement รวม',M+95,y+4);
   doc.setTextColor(...COLOR.ink); doc.setFont('helvetica','bold'); doc.setFontSize(10);
   doc.text('฿'+fmtN(c.totalFee),M+2,y+10); doc.text(fmtN(c.totalViews),M+48,y+10); doc.text(fmtN(c.totalEng),M+95,y+10);
   y += 16;
@@ -1141,7 +1163,7 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
     doc.setFillColor(...ffCol); doc.rect(M,y,5,12,'F');
     doc.setDrawColor(...COLOR.ink); doc.setLineWidth(0.3); doc.rect(M,y,W-M*2,12);
     doc.setTextColor(...COLOR.ink); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
-    doc.text(c.ffLevel==='low'?'WARNING: View/Follower ratio very low':c.ffLevel==='mid'?'View/Follower ratio below average':'View/Follower ratio looks healthy', M+8, y+5.5);
+    doc.text(c.ffLevel==='low'?'สัญญาณเตือน: View/Follower ต่ำมาก':c.ffLevel==='mid'?'View/Follower ค่อนข้างต่ำ':'View/Follower อยู่ในเกณฑ์ดี', M+8, y+5.5);
     doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...COLOR.muted);
     const lines=doc.splitTextToSize(c.ffDesc, W-M*2-12);
     const ffDescEn = c.ffLevel==='low'?`Views ${c.vfRatio!==null?c.vfRatio.toFixed(1):'?'}% of followers - possible inactive/purchased followers (normal >10%)`:c.ffLevel==='mid'?`Views ${c.vfRatio!==null?c.vfRatio.toFixed(1):'?'}% of followers - request insight before deciding (normal 10-30%)`:`Views ${c.vfRatio!==null?c.vfRatio.toFixed(1):'?'}% of followers - normal ratio, trustworthy`;
@@ -1153,7 +1175,7 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
   // Reasons
   if(y+6+c.reasons.length*5 > 280){doc.addPage();y=M;}
   doc.setTextColor(...COLOR.ink); doc.setFont('helvetica','bold'); doc.setFontSize(10);
-  doc.text('EVALUATION REASONS', M, y); y+=5;
+  doc.text('เหตุผลประกอบการตัดสิน', M, y); y+=5;
   doc.setDrawColor(...COLOR.ink); doc.setLineWidth(0.3); doc.line(M,y-1,W-M,y-1);
   c.reasons.forEach(([t,txt])=>{
     const rc=t==='pos'?COLOR.good:t==='neg'?COLOR.bad:COLOR.mid;
@@ -1170,7 +1192,7 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
   // Footer
   doc.setDrawColor(...COLOR.ink); doc.setLineWidth(0.3); doc.line(M,285,W-M,285);
   doc.setTextColor(...COLOR.muted); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-  doc.text('* Estimates only. Results depend on content quality.', M, 289);
+  doc.text('* ตัวเลขเป็นการประมาณการ ผลจริงขึ้นกับคุณภาพคอนเทนต์', M, 289);
   doc.text('Influencer ROI Lab', W-M, 289, {align:'right'});
 }
 
@@ -1293,7 +1315,7 @@ async function loadUsers() {
       return `<tr style="cursor:pointer;" onclick="openUserModal('${u.id}','${escapeHtml(u.email||'')}','${escapeHtml(u.display_name||'')}','${escapeHtml(u.phone||'')}','${escapeHtml(u.contact||'')}','${u.role||'user'}')">
         <td style="font-size:13px;font-weight:500">${hasInfo?escapeHtml(u.display_name||'—'):'<span style=\"color:var(--accent);font-size:11px;font-family:JetBrains Mono\">+ กดเพื่อเพิ่มข้อมูล</span>'}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${escapeHtml(u.email||'—')}</td>
-        <td style="font-size:12px;color:var(--muted)">${escapeHtml(contactInfo)}</td>
+        <td style="font-size:12px;">${formatContactInfo(u.phone, u.contact)}</td>
         <td><span class="role-badge ${u.role}">${u.role}</span></td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">${dateStr}</td>
         <td style="text-align:right" onclick="event.stopPropagation()">${u.id===currentUser?.id?'<span style="font-size:10px;color:var(--muted);font-family:JetBrains Mono">YOU</span>':`<button class="del-btn" onclick="delUser('${u.id}','${escapeHtml(u.email||'')}')">✕</button>`}</td>
@@ -1354,6 +1376,21 @@ function toast(msg,type=''){
 }
 
 
+function formatContactInfo(phone, contact) {
+  let parts = [];
+  if(phone) parts.push(`<span style="color:var(--muted)">${escapeHtml(phone)}</span>`);
+  if(contact) {
+    const isUrl = contact.startsWith('http')||contact.startsWith('line://')||contact.startsWith('https://chat.line');
+    if(isUrl) {
+      const label = contact.includes('line')||contact.includes('chat') ? '💬 Line' : '🔗 ลิงก์';
+      parts.push(`<a href="${escapeHtml(contact)}" target="_blank" rel="noopener" style="display:inline-block;padding:3px 10px;background:var(--good);color:var(--paper);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;text-decoration:none;border:1.5px solid var(--line);">${label}</a>`);
+    } else {
+      parts.push(`<span style="color:var(--muted)">${escapeHtml(contact)}</span>`);
+    }
+  }
+  return parts.length ? parts.join(' ') : '—';
+}
+
 // ── USER MODAL ──
 function openUserModal(id, email, name, phone, contact, role) {
   document.getElementById('modal-uid').value = id;
@@ -1401,6 +1438,23 @@ async function saveUserModal() {
 document.getElementById('user-modal').addEventListener('click', function(e) {
   if(e.target === this) closeUserModal();
 });
+
+function toggleTheme(){
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('theme', isDark?'dark':'light');
+  const icon = isDark?'☀️':'🌙';
+  document.querySelectorAll('.theme-toggle, #theme-btn, #login-theme-btn').forEach(b=>b.textContent=icon);
+}
+// Load saved theme
+(function(){
+  const saved = localStorage.getItem('theme');
+  if(saved==='dark'){
+    document.body.classList.add('dark');
+    document.addEventListener('DOMContentLoaded',()=>{
+      document.querySelectorAll('.theme-toggle').forEach(b=>b.textContent='☀️');
+    });
+  }
+})();
 
 initAuth();
 </script>
