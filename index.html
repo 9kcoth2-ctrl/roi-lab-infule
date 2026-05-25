@@ -247,7 +247,10 @@
   .person-tab-pill.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
   .person-tab-pill.done::after{content:'✓';position:absolute;top:-5px;right:-5px;background:var(--good);color:var(--paper);font-size:9px;
     width:14px;height:14px;border-radius:50%;display:grid;place-items:center;font-weight:700;}
-  .person-tab-pill .del-p{margin-left:6px;opacity:0.5;font-size:13px;line-height:1;}
+  .person-tab-pill .del-p{margin-left:4px;opacity:0.5;font-size:13px;line-height:1;}
+  .person-tab-pill .pill-link{margin-left:4px;opacity:0.6;font-size:11px;font-weight:700;padding:0 2px;border-radius:2px;transition:opacity 0.1s;}
+  .person-tab-pill .pill-link:hover{opacity:1;color:var(--tiktok2);}
+  .person-tab-pill.active .pill-link{color:var(--tiktok);}
   .person-tab-pill:hover .del-p{opacity:1;color:var(--bad);}
   .next-person-btn{margin-top:16px;width:100%;padding:14px;background:var(--paper);color:var(--ink);border:2px dashed var(--line);
     font-family:'IBM Plex Sans Thai',sans-serif;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.15s;
@@ -268,7 +271,7 @@
   .bulk-count-badge{background:rgba(255,255,255,0.2);padding:2px 8px;font-family:'JetBrains Mono',monospace;font-size:11px;}
 
   /* Admin */
-  .admin-layout{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;}
+  .admin-layout{display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start;}
   @media(max-width:900px){.admin-layout{grid-template-columns:1fr;}}
   .user-table{width:100%;border-collapse:collapse;font-size:13px;}
   .user-table th{background:var(--ink);color:var(--paper);padding:10px 12px;text-align:left;font-family:'JetBrains Mono',monospace;
@@ -470,11 +473,7 @@
           <div class="hint">จำนวนคลิปที่ตกลงจ้างในดีลนี้ — เช่น จ้าง 2 คลิป ราคาคลิปละ ฿5,000 → ค่าจ้างรวม ฿10,000 · ระบบจะเอาวิวและ engagement คูณตามจำนวนนี้ด้วย</div>
         </div>
 
-        <div class="field-group">
-          <label>CPM เป้าหมาย (฿/1,000 วิว) <span style="color:var(--muted);font-weight:400;font-size:11px">ราคาที่โอเค</span></label>
-          <input type="number" id="target-cpm" placeholder="เช่น 80" min="0" oninput="calculate()">
-          <div class="hint">ตั้งว่า "จ่ายได้สูงสุดกี่บาทต่อ 1,000 วิว" — ถ้าไม่แน่ใจใส่ <strong>80</strong> ได้เลย (กลางๆ ของตลาดไทย) · เกณฑ์: &lt;50 = ถูกมาก · 50–100 = ตลาด · 100–200 = แพงนิด · &gt;200 = แพงเกิน</div>
-        </div>
+
 
 
       </section>
@@ -496,13 +495,6 @@
             <div class="score-marks"><span>0</span><span>ไม่คุ้ม</span><span>พอได้</span><span>คุ้ม</span><span>100</span></div>
           </div>
 
-          <!-- Open TikTok link button -->
-          <div id="profile-link-bar" style="display:none;margin-top:10px;">
-            <button onclick="openProfileLink()" style="width:100%;padding:11px;background:var(--paper);color:var(--ink);border:2px solid var(--line);font-family:'IBM Plex Sans Thai',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:3px 3px 0 var(--ink);" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='var(--paper)'">
-              <span style="font-size:16px">✓</span> เปิดหน้า TikTok ของช่องนี้ <span id="profile-link-handle" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent)"></span>
-            </button>
-          </div>
-
           <div id="ff-alert-wrap"></div>
 
           <div class="metrics animate-in" style="animation-delay:.1s">
@@ -518,7 +510,7 @@
               <div class="metric-value">฿<span id="m-cpm">—</span></div>
               <div id="m-cpm-bench" class="metric-bench">—</div>
               <div class="metric-explain">จ่ายเงินกี่บาทเพื่อให้คน 1,000 คนเห็นคอนเทนต์ — ยิ่งถูก ยิ่งคุ้มต่อการจ้าง</div>
-              <div class="metric-bench" style="color:var(--muted);margin-top:4px">&lt;฿50 ถูกมาก · ฿50–100 ราคาตลาด · &gt;฿200 แพงเกิน</div>
+              <div class="metric-bench" style="color:var(--muted);margin-top:4px">&lt;฿50 = ถูกมาก · ฿50–100 = ราคาตลาด · ฿100–200 = แพงนิด · &gt;฿200 = แพงเกิน</div>
             </div>
             <div class="metric">
               <div class="metric-label">CPE (ต้นทุน / engagement)</div>
@@ -578,10 +570,16 @@
       <div class="panel">
         <div class="section-label">เพิ่ม User ใหม่</div>
         <h2 class="section-title">สร้างบัญชี</h2>
+        <div class="field-group"><label>ชื่อ-นามสกุล <span style="color:var(--muted);font-weight:400;font-size:11px">(แสดงในตาราง)</span></label><input type="text" id="new-name" placeholder="เช่น สมชาย ใจดี"></div>
+        <div class="field-row" style="margin-bottom:0">
+          <div class="field-group"><label>เบอร์โทร</label><input type="text" id="new-phone" placeholder="เช่น 081-234-5678"></div>
+          <div class="field-group"><label>Line / IG / อื่นๆ</label><input type="text" id="new-contact" placeholder="เช่น @lineid"></div>
+        </div>
         <div class="field-group"><label>Email</label><input type="email" id="new-email" placeholder="employee@email.com"></div>
         <div class="field-group"><label>Password เริ่มต้น</label><input type="text" id="new-password" placeholder="เช่น roi2024"><div class="hint">แจ้งรหัสให้พนักงานเอง</div></div>
         <div class="field-group"><label>Role</label><select id="new-role"><option value="user">User — ใช้งานคำนวณได้</option><option value="admin">Admin — จัดการ user ได้ด้วย</option></select></div>
         <button class="calc-btn" id="add-user-btn" onclick="addUser()">+ เพิ่ม User →</button>
+        <div class="hint" style="margin-top:10px;line-height:1.6;">⚠️ ต้องเพิ่ม column <kbd>display_name</kbd>, <kbd>phone</kbd>, <kbd>contact</kbd> ใน Supabase <code>profiles</code> table ก่อน — ถ้ายังไม่ได้เพิ่ม ข้อมูลจะไม่ถูกบันทึก</div>
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -590,7 +588,7 @@
         </div>
         <div class="table-wrap">
           <div id="user-table-loading" class="table-empty"><span class="spinner"></span>กำลังโหลด...</div>
-          <table class="user-table hidden" id="user-table"><thead><tr><th>Email</th><th>Role</th><th>สร้างเมื่อ</th><th></th></tr></thead><tbody id="user-tbody"></tbody></table>
+          <table class="user-table hidden" id="user-table"><thead><tr><th>ชื่อ</th><th>Email</th><th>เบอร์ / ติดต่อ</th><th>Role</th><th>สร้างเมื่อ</th><th></th></tr></thead><tbody id="user-tbody"></tbody></table>
           <div id="user-table-empty" class="table-empty hidden">ยังไม่มี user</div>
         </div>
       </div>
@@ -617,7 +615,7 @@ let currentPersonIdx = 0;
 function createEmptyPerson() {
   return {
     profileData: { channelName:'', handle:'', profileUrl:'', inputUrl:'', avatarUrl:'' },
-    fields: { followers:0, avgViews:0, erRate:4, price:0, count:1, targetCpm:0, url:'' },
+    fields: { followers:0, avgViews:0, erRate:4, price:0, count:1, url:'' },
     calc: null,
     clipViews: []
   };
@@ -680,7 +678,7 @@ function saveCurrentFields() {
     erRate: parseFloat(document.getElementById('er-rate').value)||4,
     price:     parseFloat(document.getElementById('price').value)||0,
     count:     parseInt(document.getElementById('content-count').value)||1,
-    targetCpm: parseFloat(document.getElementById('target-cpm').value)||80,
+
     url:       document.getElementById('tiktokUrl').value
   };
 }
@@ -697,7 +695,7 @@ function loadPersonIntoUI(idx) {
   document.getElementById('er-rate-val').textContent = (p.fields.erRate||4).toFixed(1)+'%';
   document.getElementById('price').value = p.fields.price || '';
   document.getElementById('content-count').value = p.fields.count || '';
-  document.getElementById('target-cpm').value = p.fields.targetCpm || '';
+
   document.getElementById('tiktokUrl').value = p.fields.url;
 
   // Load clip views
@@ -707,7 +705,6 @@ function loadPersonIntoUI(idx) {
 
   // Load profile card
   renderProfileCard(p.profileData);
-  updateProfileLinkBar();
   renderPersonTabs();
   calculate();
 }
@@ -735,8 +732,11 @@ function renderPersonTabs() {
     const label = p.profileData.channelName || p.profileData.handle ? ('@'+(p.profileData.handle||'')) : `#${i+1}`;
     const isDone = p.calc !== null;
     const isActive = i === currentPersonIdx;
+    const url = persons[i].profileData.profileUrl || '';
+    const linkIcon = url ? `<span class="pill-link" onclick="event.stopPropagation();window.open('${url}','_blank','noopener')" title="เปิด TikTok">↗</span>` : '';
     return `<button class="person-tab-pill${isActive?' active':''}${isDone?' done':''}" onclick="loadPersonIntoUI(${i})">
       ${escapeHtml(label.substring(0,14))}
+      ${linkIcon}
       ${persons.length>1?`<span class="del-p" onclick="event.stopPropagation();deletePerson(${i})">✕</span>`:''}
     </button>`;
   }).join('');
@@ -868,18 +868,6 @@ function openProfileLink(){
   else toast('ยังไม่ได้ดึงลิงก์ — วาง URL แล้วกดดึงข้อมูลก่อน','error');
 }
 
-function updateProfileLinkBar(){
-  const pd = persons[currentPersonIdx].profileData;
-  const bar = document.getElementById('profile-link-bar');
-  const handle = document.getElementById('profile-link-handle');
-  if(pd.profileUrl){
-    bar.style.display='block';
-    handle.textContent = pd.handle ? '@'+pd.handle : pd.profileUrl;
-  } else {
-    bar.style.display='none';
-  }
-}
-
 function syncER(){
   const v=parseFloat(document.getElementById('er-rate').value)||4;
   document.getElementById('er-rate-val').textContent=v.toFixed(1)+'%';
@@ -904,7 +892,6 @@ function calculate(){
   const avgEngage=followers>0 ? Math.round(followers*(erRate/100)) : 0;
   const price=parseFloat(document.getElementById('price').value)||0;
   const count=parseInt(document.getElementById('content-count').value)||1;
-  const targetCpm=parseFloat(document.getElementById('target-cpm').value)||80;
 
   if(!price&&!avgViews){
     document.getElementById('empty-state').classList.remove('hidden');
@@ -941,15 +928,12 @@ function calculate(){
   else if(erPct > 0){score-=15;reasons.push(['neg',`Engagement Rate ${erPct.toFixed(1)}% — Below benchmark (<3%), be cautious`]);}
   else{reasons.push(['neu','No followers data — cannot calculate ER yet']);}
 
-  // 2. CPM (weight 25)
+  // 2. CPM (weight 25) — fixed market benchmarks
   if(cpm!==null){
     if(cpm<50){score+=15;reasons.push(['pos',`CPM B${cpm.toFixed(0)} — Very cheap (<B50), excellent value`]);}
     else if(cpm<=100){score+=8;reasons.push(['neu',`CPM B${cpm.toFixed(0)} — Market rate (B50-100)`]);}
     else if(cpm<=200){score-=8;reasons.push(['neu',`CPM B${cpm.toFixed(0)} — Slightly high (B100-200), try negotiating`]);}
     else{score-=18;reasons.push(['neg',`CPM B${cpm.toFixed(0)} — Too expensive (>B200), negotiate price`]);}
-    // เทียบกับเป้าที่ตั้ง
-    if(cpm<=targetCpm){reasons.push(['pos',`CPM is at or below your target (B${targetCpm})`]);}
-    else{score-=5;reasons.push(['neg',`CPM exceeds your target (target B${targetCpm})`]);}
   }
 
   // 3. CPE (weight 20)
@@ -990,7 +974,7 @@ function calculate(){
   // Save to person
   persons[currentPersonIdx].calc = {
     followers, avgViews, avgEngage, price, count,
-    totalFee, totalViews, totalEng, targetCpm,
+    totalFee, totalViews, totalEng,
     erPct, cpm, cpe, vfRatio, ffLevel, ffTitle, ffDesc,
     score, vText, vSub, vClass, reasons, ffTitle, ffDesc,
     channelName: persons[currentPersonIdx].profileData.channelName||'',
@@ -1024,7 +1008,7 @@ function calculate(){
   sb2('m-er-bench', erPct>=5?'ดีมาก':erPct>=3?'ปกติ':erPct>0?'ต่ำกว่าเกณฑ์':'—', erPct>=5?'good':erPct>=3?'mid':'bad');
 
   sm('m-cpm', cpm!==null?fmtN(cpm,0):'—');
-  sb2('m-cpm-bench', cpm!==null?(cpm<50?'ถูกมาก':cpm<=100?'ราคาตลาด':cpm<=200?'แพงไปนิด':'แพงเกินไป'):`เป้า ฿${targetCpm}`, cpm!==null?(cpm<50?'good':cpm<=100?'mid':'bad'):'');
+  sb2('m-cpm-bench', cpm!==null?(cpm<50?'ถูกมาก':cpm<=100?'ราคาตลาด':cpm<=200?'แพงไปนิด':'แพงเกินไป'):'—', cpm!==null?(cpm<50?'good':cpm<=100?'mid':'bad'):'');
 
   sm('m-cpe', cpe!==null?fmtN(cpe,2):'—');
   sb2('m-cpe-bench', cpe!==null?(cpe<10?'ดีมาก':cpe<=30?'ปกติ':'แพง'):'—', cpe!==null?(cpe<10?'good':cpe<=30?'mid':'bad'):'');
@@ -1125,7 +1109,7 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
   const colW=(W-M*2)/2, rowH=22;
   const metrics=[
     ['Engagement Rate',     c.erPct>0?c.erPct.toFixed(1)+'%':'—',    c.erPct>=5?'Excellent':c.erPct>=3?'Normal':'Below avg',   '5%+ Excellent · 3-5% Normal · <3% Low'],
-    ['CPM (B/1,000 views)', c.cpm!==null?'B'+fmtN(c.cpm,0):'—',     c.cpm!==null?(c.cpm<50?'Very cheap':c.cpm<=100?'Market rate':c.cpm<=200?'A bit high':'Too expensive'):'—', '<50 Very cheap · 50-100 Market · >200 Expensive'],
+    ['CPM (B/1,000 views)', c.cpm!==null?'B'+fmtN(c.cpm,0):'—',     c.cpm!==null?(c.cpm<50?'Very cheap (< B50)':c.cpm<=100?'Market rate (B50-100)':c.cpm<=200?'A bit high (B100-200)':'Too expensive (>B200)'):'—', '<50 Cheap · 50-100 Market · >200 Expensive'],
     ['CPE (B/engagement)',  c.cpe!==null?'B'+fmtN(c.cpe,2):'—',     c.cpe!==null?(c.cpe<10?'Excellent':c.cpe<=30?'Normal':'Expensive'):'—', '<10 Excellent · 10-30 Normal · >30 Expensive'],
     ['View/Follower',       c.vfRatio!==null?c.vfRatio.toFixed(1)+'%':'—', c.vfRatio!==null?(c.vfRatio>=10?'Normal':c.vfRatio>=5?'Below avg':'Low - risky'):'—', '>10% Normal · 5-10% Low · <5% Risky']
   ];
@@ -1223,8 +1207,7 @@ function exportAllExcel() {
     const header=[
       'ลำดับ','ชื่อช่อง','Handle','Profile URL',
       'Followers','Avg Views/คลิป','Engagement/คลิป','จำนวนคอนเทนต์','ราคา/คลิป (฿)','ค่าจ้างรวม (฿)',
-      'Engagement Rate (%)','CPM (฿)','CPE (฿)','View/Follower (%)','CPM เป้า (฿)',
-      'คะแนน (0-100)','ผลการประเมิน','หมายเหตุ'
+      'Engagement Rate (%)','CPM (฿)','CPE (฿)','View/Follower (%)',      'คะแนน (0-100)','ผลการประเมิน','หมายเหตุ'
     ];
     const rows = donePeople.map((p,i)=>{
       const c=p.calc;
@@ -1238,7 +1221,6 @@ function exportAllExcel() {
         c.cpm!==null?Number(c.cpm.toFixed(2)):'—',
         c.cpe!==null?Number(c.cpe.toFixed(2)):'—',
         c.vfRatio!==null?Number(c.vfRatio.toFixed(2)):'—',
-        c.targetCpm,
         c.score, c.vText, c.vSub
       ];
     });
@@ -1268,7 +1250,6 @@ function exportAllExcel() {
         ['── ผลการคำนวณ ──'],
         ['Engagement Rate (%)',Number(c.erPct.toFixed(2))],
         ['CPM จริง (฿/1,000 วิว)',c.cpm!==null?Number(c.cpm.toFixed(2)):'—'],
-        ['CPM เป้าหมาย (฿)',c.targetCpm],
         ['CPE (฿/engagement)',c.cpe!==null?Number(c.cpe.toFixed(2)):'—'],
         ['View/Follower (%)',c.vfRatio!==null?Number(c.vfRatio.toFixed(2)):'—'],
         [],
@@ -1301,7 +1282,7 @@ async function loadUsers() {
   const emptyEl=document.getElementById('user-table-empty');
   loadingEl.classList.remove('hidden'); tableEl.classList.add('hidden'); emptyEl.classList.add('hidden');
   try {
-    const {data,error}=await sb.from('profiles').select('id,email,role,created_at').order('created_at',{ascending:false});
+    const {data,error}=await sb.from('profiles').select('id,email,role,display_name,phone,contact,created_at').order('created_at',{ascending:false});
     if(error)throw error;
     loadingEl.classList.add('hidden');
     if(!data||!data.length){emptyEl.classList.remove('hidden');return;}
@@ -1309,8 +1290,11 @@ async function loadUsers() {
     tbody.innerHTML=data.map(u=>{
       const d=new Date(u.created_at);
       const dateStr=d.toLocaleDateString('th-TH',{year:'2-digit',month:'short',day:'numeric'});
+      const contactInfo = [u.phone,u.contact].filter(Boolean).join(' · ') || '—';
       return `<tr>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${escapeHtml(u.email||'—')}</td>
+        <td style="font-size:13px;font-weight:500">${escapeHtml(u.display_name||'—')}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${escapeHtml(u.email||'—')}</td>
+        <td style="font-size:12px;color:var(--muted)">${escapeHtml(contactInfo)}</td>
         <td><span class="role-badge ${u.role}">${u.role}</span></td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">${dateStr}</td>
         <td style="text-align:right">${u.id===currentUser?.id?'<span style="font-size:10px;color:var(--muted);font-family:JetBrains Mono">YOU</span>':`<button class="del-btn" onclick="delUser('${u.id}','${escapeHtml(u.email||'')}')">✕</button>`}</td>
@@ -1321,6 +1305,9 @@ async function loadUsers() {
 }
 
 async function addUser() {
+  const name=document.getElementById('new-name').value.trim();
+  const phone=document.getElementById('new-phone').value.trim();
+  const contact=document.getElementById('new-contact').value.trim();
   const email=document.getElementById('new-email').value.trim();
   const password=document.getElementById('new-password').value;
   const role=document.getElementById('new-role').value;
@@ -1330,9 +1317,20 @@ async function addUser() {
   try {
     const {data,error}=await sb.auth.signUp({email,password});
     if(error)throw error;
-    if(role==='admin'&&data?.user?.id) await sb.from('profiles').update({role}).eq('id',data.user.id);
+    if(data?.user?.id){
+      const updates={};
+      if(role==='admin') updates.role=role;
+      if(name) updates.display_name=name;
+      if(phone) updates.phone=phone;
+      if(contact) updates.contact=contact;
+      if(Object.keys(updates).length) await sb.from('profiles').update(updates).eq('id',data.user.id);
+    }
     toast('เพิ่ม user แล้ว','success');
-    document.getElementById('new-email').value=''; document.getElementById('new-password').value='';
+    document.getElementById('new-name').value='';
+    document.getElementById('new-phone').value='';
+    document.getElementById('new-contact').value='';
+    document.getElementById('new-email').value='';
+    document.getElementById('new-password').value='';
     loadUsers();
   } catch(e){ toast('เพิ่มไม่สำเร็จ: '+e.message,'error'); }
   btn.disabled=false; btn.textContent='+ เพิ่ม User →';
