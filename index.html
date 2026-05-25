@@ -666,39 +666,71 @@ document.addEventListener('paste',e=>{
   }
 });
 
-// ── OCR SCAN (Tesseract.js — runs in browser, no API needed) ──
-function parseNumber(str) {
-  if(!str) return null;
-  const s = str.replace(/,/g,'').trim();
-  const m = s.match(/([\d.]+)\s*([KkMmBb]?)/);
+// ── OCR SCAN (Tesseract.js — TikTok pattern aware) ──
+function parseNum(s) {
+  if(!s) return null;
+  s = s.replace(/,/g,'').replace(/\s/g,'');
+  const m = s.match(/^([\d.]+)([KkMmBb]?)$/);
   if(!m) return null;
   let n = parseFloat(m[1]);
-  const unit = m[2].toUpperCase();
-  if(unit==='K') n *= 1000;
-  else if(unit==='M') n *= 1000000;
-  else if(unit==='B') n *= 1000000000;
+  if(isNaN(n)) return null;
+  const u = m[2].toUpperCase();
+  if(u==='K') n*=1000;
+  else if(u==='M') n*=1000000;
+  else if(u==='B') n*=1000000000;
   return Math.round(n);
 }
 
-function extractNumbers(text) {
-  const pattern = /([\d,]+\.?\d*\s*[KkMmBb]?)\b/g;
-  const results = [];
-  let m;
-  while((m = pattern.exec(text)) !== null) {
-    const n = parseNumber(m[1]);
-    if(n && n >= 500) results.push(n);
-  }
-  return results;
-}
-
-function guessStats(numbers) {
-  const sorted = [...new Set(numbers)].sort((a,b)=>b-a);
+function parseTikTokText(text) {
   let followers = null;
   let views = [];
-  for(const n of sorted) {
-    if(!followers && n >= 1000) { followers = n; continue; }
-    if(n >= 500 && n < (followers||Infinity)) views.push(n);
+
+  // ---- หา followers ----
+  // TH: "8812 ผู้ติดตาม" หรือ "163.1K ผู้ติดตาม"
+  const thFollower = text.match(/([\d,.]+[KkMmBb]?)\s*ผู้ติดตาม/);
+  if(thFollower) followers = parseNum(thFollower[1]);
+
+  // EN: "8812 Followers"
+  if(!followers) {
+    const enFollower = text.match(/([\d,.]+[KkMmBb]?)\s*[Ff]ollowers?/);
+    if(enFollower) followers = parseNum(enFollower[1]);
   }
+
+  // fallback: pattern "X กำลังติดตาม Y ผู้ติดตาม Z ถูกใจ" -> เอา Y
+  if(!followers) {
+    const thLine = text.match(/([\d,.]+[KkMmBb]?)\s*กำลังติดตาม\s+([\d,.]+[KkMmBb]?)/);
+    if(thLine) followers = parseNum(thLine[2]);
+  }
+
+  // ---- หา views ---- 
+  // เอาตัวเลขทั้งหมด แล้ว filter
+  const allNums = [];
+  const pat = /([\d,.]+[KkMmBb]?)/g;
+  let m;
+  while((m=pat.exec(text))!==null) {
+    const n = parseNum(m[1]);
+    if(n && n >= 100) allNums.push(n);
+  }
+
+  const unique = [...new Set(allNums)];
+  if(followers) {
+    // views คือตัวเลขที่ไม่ใช่ followers และไม่ใช่ตัวเลขที่ใกล้เคียง following/likes
+    // following มักอยู่ก่อน followers ในข้อความ หา pattern "X Y Z" สามตัวติดกัน
+    const tripleMatch = text.match(/([\d,.]+[KkMmBb]?)\s+\S+\s+([\d,.]+[KkMmBb]?)\s+\S+\s+([\d,.]+[KkMmBb]?)/);
+    const exclude = new Set();
+    if(tripleMatch) {
+      [tripleMatch[1],tripleMatch[2],tripleMatch[3]].forEach(v=>{
+        const n=parseNum(v); if(n) exclude.add(n);
+      });
+    }
+    views = unique.filter(n => !exclude.has(n) && n < 10000000);
+  } else {
+    // ไม่รู้ followers -> เรียงมากไปน้อย เอาตัวที่ 2 เป็น followers ที่เหลือเป็น views
+    const sorted = [...unique].sort((a,b)=>b-a);
+    followers = sorted[1] || sorted[0];
+    views = sorted.slice(3);
+  }
+
   return { followers, views };
 }
 
@@ -720,16 +752,15 @@ async function scanAllImages() {
       }
     });
 
-    let allNumbers = [];
+    let allRawText = '';
     for(let i=0; i<imageList.length; i++) {
       status.textContent = `สแกนรูปที่ ${i+1}/${imageList.length}...`;
       const { data: { text } } = await worker.recognize(imageList[i].dataUrl);
-      const nums = extractNumbers(text);
-      allNumbers = allNumbers.concat(nums);
+      allRawText += ' ' + text;
     }
     await worker.terminate();
 
-    const { followers, views } = guessStats(allNumbers);
+    const { followers, views } = parseTikTokText(allRawText);
     const avgViews = views.length > 0 ? Math.round(views.reduce((a,b)=>a+b,0)/views.length) : null;
     let filled = [];
 
@@ -746,7 +777,7 @@ async function scanAllImages() {
 
     if(filled.length) {
       status.className = 'scan-status success';
-      status.textContent = '✓ ' + filled.join(' · ') + '\nตัวเลขที่เจอทั้งหมด: ' + allNumbers.slice(0,15).map(n=>fmtN(n)).join(', ');
+      status.textContent = '✓ ' + filled.join(' · ') + '\nviews ที่เจอ: ' + views.slice(0,12).map(n=>fmtN(n)).join(', ');
       calculate();
       toast('✓ อ่านตัวเลขสำเร็จ', 'success');
     } else {
