@@ -825,7 +825,6 @@ async function fetchProfile() {
     persons[currentPersonIdx].profileData = pd;
     renderProfileCard(pd);
     renderPersonTabs();
-    updateProfileLinkBar();
     calculate();
   } catch(e) {
     card.className='profile-card error';
