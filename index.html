@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
     --bg: #F4F1EA; --ink: #1A1815; --paper: #FBF9F4; --line: #1A1815;
@@ -47,7 +49,7 @@
   .login-card .sub { font-size:13px; color:var(--muted); margin-bottom:28px; font-family:'JetBrains Mono',monospace; }
 
   label { display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:var(--ink); }
-  input[type="email"],input[type="password"],input[type="number"],input[type="text"],select,textarea {
+  input[type="email"],input[type="password"],input[type="number"],input[type="text"],input[type="url"],select,textarea {
     width:100%; padding:10px 12px; border:1.5px solid var(--line);
     background:var(--bg); font-family:'JetBrains Mono',monospace;
     font-size:14px; color:var(--ink); transition:all 0.15s;
@@ -130,28 +132,12 @@
   .profile-info { flex:1; min-width:0; }
   .profile-info .name { font-family:'Fraunces',serif; font-weight:600; font-size:16px; line-height:1.2; margin-bottom:2px; }
   .profile-info .handle { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); }
+  .profile-info .handle a { color:var(--muted); text-decoration:none; border-bottom:1px dotted var(--muted); }
+  .profile-info .handle a:hover { color:var(--accent); border-color:var(--accent); }
   .profile-info .bio { font-size:12px; color:var(--muted); margin-top:4px; line-height:1.4; }
 
-  /* Upload Zone */
-  
-  .upload-zone:hover { background:var(--paper); border-color:var(--tiktok2); }
-  .upload-zone.dragover { background:var(--paper); border-color:var(--tiktok2); transform:scale(0.99); }
-  .upload-zone.has-image { padding:12px; cursor:default; }
-  .upload-icon { font-family:'Fraunces',serif; font-size:30px; color:var(--accent); line-height:1; margin-bottom:8px; transform:rotate(-6deg); display:inline-block; }
-  .upload-zone p { font-size:13px; color:var(--ink); margin-bottom:4px; }
-  .upload-zone .hint { font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
-  .upload-zone input[type="file"] { display:none; }
-  
-  .preview-wrap img { max-width:100%; max-height:220px; border:1.5px solid var(--line); display:block; }
-  
-  .scan-btn:hover { background:var(--tiktok2); }
-  .scan-btn:disabled { background:var(--muted); cursor:not-allowed; }
-  
-  .scan-status.success { border-color:var(--good); color:var(--good); }
-  .scan-status.error { border-color:var(--bad); color:var(--bad); }
-
   kbd { background:var(--ink); color:var(--paper); padding:2px 6px; font-family:'JetBrains Mono',monospace; font-size:11px; border-radius:3px; }
-  
+
   .result-panel { position:sticky; top:20px; }
   .verdict { border:2px solid var(--line); padding:20px 24px; text-align:center; background:var(--paper); }
   .verdict-badge { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
@@ -162,6 +148,20 @@
   .score-bar { height:100%; width:0%; transition:width 0.6s cubic-bezier(0.5,0,0.2,1); }
   .score-bar.good{background:var(--good);} .score-bar.mid{background:var(--mid);} .score-bar.bad{background:var(--bad);}
   .score-marks { display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); margin-top:5px; }
+
+  /* Fake follower warning */
+  .ff-alert { margin-top:12px; padding:12px 16px; border:2px solid var(--line); display:flex; gap:12px; align-items:flex-start; }
+  .ff-alert.high { background:rgba(46,125,79,0.08); border-color:var(--good); }
+  .ff-alert.mid  { background:rgba(201,138,26,0.08); border-color:var(--mid); }
+  .ff-alert.low  { background:rgba(199,62,29,0.08); border-color:var(--bad); }
+  .ff-icon { flex-shrink:0; width:32px; height:32px; display:grid; place-items:center; font-family:'Fraunces',serif; font-weight:700; font-size:18px; border:2px solid var(--line); }
+  .ff-alert.high .ff-icon { background:var(--good); color:var(--paper); }
+  .ff-alert.mid  .ff-icon { background:var(--mid); color:var(--paper); }
+  .ff-alert.low  .ff-icon { background:var(--bad); color:var(--paper); }
+  .ff-content { flex:1; }
+  .ff-title { font-weight:600; font-size:13px; margin-bottom:2px; }
+  .ff-desc { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+
   .metrics { display:grid; grid-template-columns:1fr 1fr; margin-top:12px; border:2px solid var(--line); background:var(--paper); }
   .metric { padding:14px 16px; border-right:1.5px solid var(--line); border-bottom:1.5px solid var(--line); }
   .metric:nth-child(2n){border-right:none;} .metric:nth-last-child(-n+2){border-bottom:none;}
@@ -185,6 +185,19 @@
   .copy-bridge { margin-top:12px; padding:14px 16px; border:1.5px dashed var(--line); background:var(--paper); }
   .copy-bridge h4 { font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin-bottom:8px; }
   .copy-text { font-family:'JetBrains Mono',monospace; font-size:11px; background:var(--bg); border:1px solid var(--line); padding:10px 12px; white-space:pre-wrap; color:var(--muted); line-height:1.6; min-height:60px; }
+
+  /* Export buttons */
+  .export-row { margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .export-btn { padding:12px; background:var(--paper); color:var(--ink); border:2px solid var(--line); font-family:'IBM Plex Sans Thai',sans-serif; font-weight:600; font-size:13px; cursor:pointer; letter-spacing:0.02em; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .export-btn.pdf { box-shadow:4px 4px 0 var(--tiktok2); }
+  .export-btn.pdf:hover { transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--tiktok2); background:var(--tiktok2); color:var(--paper); }
+  .export-btn.xlsx { box-shadow:4px 4px 0 var(--good); }
+  .export-btn.xlsx:hover { transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--good); background:var(--good); color:var(--paper); }
+  .export-btn:disabled { background:var(--bg); color:var(--muted); cursor:not-allowed; box-shadow:none; transform:none; }
+  .export-icon { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px; padding:3px 6px; background:var(--ink); color:var(--paper); }
+  .export-btn.pdf:hover .export-icon { background:var(--paper); color:var(--tiktok2); }
+  .export-btn.xlsx:hover .export-icon { background:var(--paper); color:var(--good); }
+
   .footnote { margin-top:20px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-align:center; letter-spacing:0.05em; line-height:1.6; }
 
   /* Admin */
@@ -261,31 +274,29 @@
   <div id="tab-calc">
     <div class="mode-label">
       <span>🎯</span>
-      <div><strong>โหมดประเมินก่อนจ้าง</strong><div class="desc">วางลิงก์ TikTok → ดึงชื่อ+รูป → กรอกตัวเลข → ผลลัพธ์ทันที</div></div>
+      <div><strong>โหมดประเมินก่อนจ้าง</strong><div class="desc">วางลิงก์ TikTok → กรอกตัวเลข → ดูผล → Export PDF/Excel ส่งลูกค้า</div></div>
     </div>
 
     <div class="layout">
       <section class="panel">
 
-        <!-- STEP 1: URL -->
+        <!-- STEP 1: TIKTOK URL -->
         <div class="section-label">ขั้นตอน 01</div>
-        <h2 class="section-title">วางลิงก์โปรไฟล์ TikTok</h2>
+        <h2 class="section-title">ลิงก์ช่อง TikTok</h2>
         <div class="url-input-wrap">
-          <input type="text" id="tiktokUrl" placeholder="https://www.tiktok.com/@username" autocomplete="off">
+          <input type="text" id="tiktokUrl" placeholder="วาง URL วิดีโอ หรือ tiktok.com/@username" autocomplete="off">
           <button class="url-btn" id="fetchBtn" onclick="fetchProfile()">ดึงข้อมูล</button>
         </div>
-        <div id="profileCard" class="profile-card empty">ยังไม่ได้ดึงข้อมูล — วาง URL แล้วกดปุ่ม</div>
+        <div id="profileCard" class="profile-card empty">ยังไม่ได้ดึงข้อมูล — วาง URL แล้วกดปุ่ม (ใช้ในรายงาน Export)</div>
 
         <div class="divider"></div>
 
-        <div class="divider"></div>
-
-        <!-- STEP 3: NUMBERS -->
+        <!-- STEP 2: NUMBERS -->
         <div class="section-label">ขั้นตอน 02</div>
-        <h2 class="section-title">ตัวเลข (แก้ไขได้)</h2>
+        <h2 class="section-title">ตัวเลขอินฟลู</h2>
 
         <div class="field-group">
-          <label>ระดับ Influencer</label>
+          <label>ระดับ Influencer (Preset)</label>
           <div class="tier-pills">
             <button class="tier-pill" onclick="applyTier('nano',this)">Nano<br><span style="font-size:9px;opacity:.6">1K–10K</span></button>
             <button class="tier-pill active" onclick="applyTier('micro',this)">Micro<br><span style="font-size:9px;opacity:.6">10K–100K</span></button>
@@ -329,7 +340,7 @@
 
         <div class="divider"></div>
 
-        <!-- STEP 4: CAMPAIGN -->
+        <!-- STEP 3: CAMPAIGN -->
         <div class="section-label">ขั้นตอน 03</div>
         <h2 class="section-title">เป้าหมายแคมเปญ</h2>
 
@@ -387,7 +398,7 @@
         <div id="empty-state" class="empty-state">
           <div class="icon">?</div>
           <h3>ยังไม่มีผลลัพธ์</h3>
-          <p>กรอกข้อมูลทางซ้ายแล้วกด "คำนวณ"</p>
+          <p>กรอกข้อมูลทางซ้าย ผลจะคำนวณอัตโนมัติ</p>
         </div>
 
         <div id="results" class="hidden">
@@ -398,6 +409,8 @@
             <div class="score-bar-wrap"><div id="score-bar" class="score-bar good"></div></div>
             <div class="score-marks"><span>0</span><span>ไม่คุ้ม</span><span>พอใช้</span><span>คุ้ม</span><span>100</span></div>
           </div>
+
+          <div id="ff-alert-wrap"></div>
 
           <div class="metrics animate-in" style="animation-delay:.1s">
             <div class="metric"><div class="metric-label">Engagement Rate</div><div class="metric-value"><span id="m-er">—</span><span class="unit">%</span></div><div id="m-er-bench" class="metric-bench">—</div></div>
@@ -419,6 +432,11 @@
             <h4>📋 สรุปผลแบบ Copy ได้</h4>
             <div class="copy-text" id="copy-text">—</div>
             <button class="calc-btn secondary" style="margin-top:10px" onclick="copyResult()">→ Copy สรุปผล</button>
+          </div>
+
+          <div class="export-row animate-in" style="animation-delay:.4s">
+            <button class="export-btn pdf" onclick="exportPDF()"><span class="export-icon">PDF</span> Export รายงาน PDF</button>
+            <button class="export-btn xlsx" onclick="exportExcel()"><span class="export-icon">XLSX</span> Export ข้อมูล Excel</button>
           </div>
         </div>
 
@@ -464,6 +482,18 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null, currentRole = 'user';
+
+// Profile state - kept across calculations for export
+let profileData = {
+  channelName: '',
+  handle: '',
+  profileUrl: '',
+  inputUrl: '',
+  avatarUrl: ''
+};
+
+// Last calculation state - for export
+let lastCalc = null;
 
 // ── AUTH ──
 async function initAuth() {
@@ -512,38 +542,92 @@ function switchTab(tab) {
   if(tab==='admin') loadUsers();
 }
 
-// ── FETCH TIKTOK PROFILE (oEmbed) ──
+// ── FETCH TIKTOK PROFILE ──
+// Handles both video URLs (via oEmbed) and profile URLs (parse handle)
+function parseHandleFromUrl(url) {
+  // Match @handle in URL
+  const m = url.match(/@([a-zA-Z0-9._]+)/);
+  return m ? m[1] : null;
+}
+
+function isVideoUrl(url) {
+  return /\/video\/\d+/.test(url) || /vm\.tiktok\.com/.test(url) || /vt\.tiktok\.com/.test(url);
+}
+
 async function fetchProfile() {
   const url = document.getElementById('tiktokUrl').value.trim();
   if(!url){ toast('ใส่ URL ก่อน','error'); return; }
+
   const btn = document.getElementById('fetchBtn');
   const card = document.getElementById('profileCard');
   btn.disabled=true; btn.textContent='กำลังดึง...';
   card.className='profile-card loading';
   card.innerHTML='<span class="spinner"></span>กำลังดึงข้อมูล...';
 
-  try {
-    const apiUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
-    const res = await fetch(apiUrl);
-    if(!res.ok) throw new Error('ไม่พบช่อง หรือ URL ไม่ถูกต้อง');
-    const data = await res.json();
+  // Reset profile state
+  profileData = { channelName:'', handle:'', profileUrl:'', inputUrl:url, avatarUrl:'' };
 
-    card.className='profile-card';
-    card.innerHTML=`
-      <img class="profile-avatar" src="${data.thumbnail_url||''}" onerror="this.style.background='var(--muted)'" alt="">
-      <div class="profile-info">
-        <div class="name">${data.author_name||'—'}</div>
-        <div class="handle">@${data.author_url?.split('@')[1]||url.split('@')[1]||'—'}</div>
-        ${data.title?`<div class="bio">${data.title.substring(0,80)}${data.title.length>80?'...':''}</div>`:''}
-      </div>`;
-    toast('✓ ดึงข้อมูลสำเร็จ','success');
+  try {
+    // Try oEmbed first (works for video URLs, sometimes profile URLs)
+    const apiUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+    let oembedOk = false;
+    let data = null;
+
+    try {
+      const res = await fetch(apiUrl);
+      if(res.ok) {
+        data = await res.json();
+        oembedOk = !!(data.author_name || data.author_url);
+      }
+    } catch(_) { /* will fall through */ }
+
+    if(oembedOk) {
+      const handle = (data.author_url && data.author_url.split('@')[1]) || parseHandleFromUrl(url) || '';
+      profileData.channelName = data.author_name || handle || 'TikTok Channel';
+      profileData.handle = handle;
+      profileData.profileUrl = handle ? `https://www.tiktok.com/@${handle}` : url;
+      profileData.avatarUrl = data.thumbnail_url || '';
+
+      card.className='profile-card';
+      card.innerHTML=`
+        <img class="profile-avatar" src="${profileData.avatarUrl}" onerror="this.style.display='none'" alt="">
+        <div class="profile-info">
+          <div class="name">${escapeHtml(profileData.channelName)}</div>
+          <div class="handle"><a href="${profileData.profileUrl}" target="_blank" rel="noopener">${profileData.profileUrl}</a></div>
+          ${data.title?`<div class="bio">${escapeHtml(data.title.substring(0,80))}${data.title.length>80?'...':''}</div>`:''}
+        </div>`;
+      toast('✓ ดึงข้อมูลสำเร็จ','success');
+    } else {
+      // Fallback: parse handle from URL
+      const handle = parseHandleFromUrl(url);
+      if(!handle) {
+        throw new Error('ไม่พบ @username ในลิงก์ — ลองวาง URL วิดีโอ หรือ tiktok.com/@username');
+      }
+      profileData.channelName = '@' + handle;
+      profileData.handle = handle;
+      profileData.profileUrl = `https://www.tiktok.com/@${handle}`;
+      profileData.avatarUrl = '';
+
+      card.className='profile-card';
+      card.innerHTML=`
+        <div class="profile-avatar" style="display:grid;place-items:center;color:var(--paper);font-family:'Fraunces',serif;font-size:18px;">@</div>
+        <div class="profile-info">
+          <div class="name">@${escapeHtml(handle)}</div>
+          <div class="handle"><a href="${profileData.profileUrl}" target="_blank" rel="noopener">${profileData.profileUrl}</a></div>
+          <div class="bio" style="color:var(--mid)">ดึงเฉพาะลิงก์ — ใส่ชื่อช่องเองได้ใน Export</div>
+        </div>`;
+      toast('✓ ดึงลิงก์แล้ว','success');
+    }
+    calculate(); // refresh copy summary
   } catch(e) {
     card.className='profile-card error';
-    card.innerHTML=`<div class="error-title">ดึงข้อมูลไม่ได้</div><div class="error-desc">${e.message} — ลองแคปหน้าจอมาแทนได้เลย</div>`;
+    card.innerHTML=`<div class="error-title">ดึงข้อมูลไม่ได้</div><div class="error-desc">${escapeHtml(e.message)}</div>`;
   }
   btn.disabled=false; btn.textContent='ดึงข้อมูล';
 }
 document.getElementById('tiktokUrl').addEventListener('keydown',e=>{ if(e.key==='Enter') fetchProfile(); });
+
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 
 // ── TIER DEFAULTS ──
 const TIERS={
@@ -563,8 +647,6 @@ function applyTier(tier,el){
   document.getElementById('price').value=d.price;
   document.getElementById('eng-rate').value=d.eng;
   document.getElementById('eng-rate-val').textContent=d.eng.toFixed(1)+'%';
-  
-  
   calculate();
 }
 function syncEng(){const v=parseFloat(document.getElementById('eng-rate').value);document.getElementById('eng-rate-val').textContent=v.toFixed(1)+'%';calculate();}
@@ -602,11 +684,33 @@ function calculate(){
   const breakeven=aov>0&&convRate>0?Math.ceil((totalFee/(aov*(margin/100)))/(convRate/100)):null;
   const allocPct=budget>0?(totalFee/budget)*100:null;
 
+  // View-to-Follower ratio (fake follower indicator)
+  const vfRatio = followers>0 ? (avgViews/followers)*100 : null;
+  let ffLevel = null, ffTitle = '', ffDesc = '';
+  if(vfRatio !== null && followers >= 1000) {
+    if(vfRatio < 5) {
+      ffLevel='low'; ffTitle='🚩 สัญญาณเตือน: View/Follower ต่ำมาก';
+      ffDesc=`Views เพียง ${vfRatio.toFixed(1)}% ของ followers — อาจมี follower ที่ไม่ active หรือซื้อมา (ปกติควร >10%)`;
+    } else if(vfRatio < 10) {
+      ffLevel='mid'; ffTitle='⚠️ View/Follower ค่อนข้างต่ำ';
+      ffDesc=`Views ${vfRatio.toFixed(1)}% ของ followers — ควรขอ insight เพิ่มก่อนจ้าง (ปกติ 10–30%)`;
+    } else {
+      ffLevel='high'; ffTitle='✓ Engagement ดูเป็นธรรมชาติ';
+      ffDesc=`Views ${vfRatio.toFixed(1)}% ของ followers — สัดส่วนปกติ น่าเชื่อถือ`;
+    }
+  }
+
   let score=50; const reasons=[];const EB=3.5;
   if(erPct>=EB*1.5){score+=12;reasons.push(['pos',`ER ${erPct.toFixed(1)}% — สูงกว่าเกณฑ์มาก`]);}
   else if(erPct>=EB){score+=6;reasons.push(['pos',`ER ${erPct.toFixed(1)}% — สูงกว่าเกณฑ์เฉลี่ย`]);}
   else if(erPct<EB*0.5){score-=12;reasons.push(['neg',`ER ${erPct.toFixed(1)}% — ต่ำกว่าเกณฑ์มาก`]);}
   else{reasons.push(['neu',`ER ${erPct.toFixed(1)}% — อยู่ในช่วงปกติ`]);}
+
+  // Fake follower penalty
+  if(ffLevel==='low'){ score-=15; reasons.push(['neg', `View/Follower ${vfRatio.toFixed(1)}% — เสี่ยง fake followers`]); }
+  else if(ffLevel==='mid'){ score-=5; reasons.push(['neu', `View/Follower ${vfRatio.toFixed(1)}% — ควรตรวจสอบเพิ่ม`]); }
+  else if(ffLevel==='high'){ score+=5; reasons.push(['pos', `View/Follower ${vfRatio.toFixed(1)}% — สัดส่วนน่าเชื่อถือ`]); }
+
   if(cpm!==null){const d=((cpm-targetCpm)/targetCpm)*100;
     if(cpm<=targetCpm*0.7){score+=15;reasons.push(['pos',`CPM ฿${cpm.toFixed(0)} — ถูกกว่าเป้า ${Math.abs(d).toFixed(0)}%`]);}
     else if(cpm<=targetCpm){score+=7;reasons.push(['pos',`CPM ฿${cpm.toFixed(0)} — ถูกกว่าเป้า`]);}
@@ -636,6 +740,17 @@ function calculate(){
   document.getElementById('verdict-sub').textContent=`${vSub} (Score: ${score}/100)`;
   const bar=document.getElementById('score-bar');bar.style.width=score+'%';bar.className='score-bar '+vClass;
 
+  // Fake follower alert
+  const ffWrap = document.getElementById('ff-alert-wrap');
+  if(ffLevel) {
+    ffWrap.innerHTML = `<div class="ff-alert ${ffLevel} animate-in">
+      <div class="ff-icon">${ffLevel==='high'?'✓':ffLevel==='mid'?'!':'✕'}</div>
+      <div class="ff-content"><div class="ff-title">${ffTitle}</div><div class="ff-desc">${ffDesc}</div></div>
+    </div>`;
+  } else {
+    ffWrap.innerHTML = '';
+  }
+
   const sm=(id,val,bench,bc)=>{document.getElementById(id).textContent=val;const b=document.getElementById(id+'-bench');if(b){b.textContent=bench;b.className='metric-bench'+(bc?' '+bc:'');}};
   sm('m-er',erPct>0?erPct.toFixed(1):'—',erPct>=EB?`↗ สูงกว่าเกณฑ์`:`↘ ต่ำกว่าเกณฑ์`,erPct>=EB?'good':'bad');
   sm('m-cpm',cpm!==null?fmtN(cpm):'—',cpm!==null?(cpm<=targetCpm?'↗ ถูกกว่าเป้า':'↘ แพงกว่าเป้า'):`เป้า ฿${targetCpm}`,cpm!==null?(cpm<=targetCpm?'good':'bad'):'');
@@ -647,18 +762,419 @@ function calculate(){
   document.getElementById('m-alloc').textContent=allocPct!==null?allocPct.toFixed(1):'—';
   document.getElementById('reason-list').innerHTML=reasons.map(([t,txt])=>`<li><span class="reason-icon ${t}">${t==='pos'?'+':t==='neg'?'−':'~'}</span><span>${txt}</span></li>`).join('');
 
-  const card=document.getElementById('profileCard');
-  const channelName=card.querySelector('.name')?.textContent||'Influencer';
+  const channelName=profileData.channelName||'Influencer';
+  const profileUrl=profileData.profileUrl||'';
   document.getElementById('copy-text').textContent=
     `📊 ROI Report — ${channelName}\n`+
+    (profileUrl?`🔗 ${profileUrl}\n`:'')+
     `━━━━━━━━━━━━━━━━━━━\n`+
     `ค่าจ้าง: ฿${fmtN(totalFee)} (${count} content)\n`+
     `Followers: ${fmt(followers)}  |  Avg Views: ${fmt(avgViews)}\n`+
     `ER: ${erPct.toFixed(1)}%  |  CPM: ฿${cpm!==null?fmtN(cpm):'—'}\n`+
+    (vfRatio!==null?`View/Follower: ${vfRatio.toFixed(1)}%\n`:'')+
     (aov>0?`Revenue: ฿${fmt(revenue)}  |  ROI: ${roi!==null?(roi>=0?'+':'')+roi.toFixed(0)+'%':'—'}\n`:'')+
     `คำตัดสิน: ${vText} (${score}/100)\n`;
+
+  // Save calculation state for export
+  lastCalc = {
+    followers, avgViews, avgEngage, price, count, totalFee, totalViews, totalEng,
+    erPct, cpm, cpe, vfRatio,
+    convRate, aov, margin, conversions, revenue, grossProfit, roi,
+    targetCpm, budget, allocPct, breakeven,
+    score, vText, vSub, vClass, ffLevel, ffTitle, ffDesc,
+    reasons,
+    objective: document.getElementById('objective').selectedOptions[0]?.text || ''
+  };
 }
 function copyResult(){navigator.clipboard.writeText(document.getElementById('copy-text').textContent).then(()=>toast('✓ Copy แล้ว','success'));}
+
+// ── EXPORT PDF ──
+async function exportPDF() {
+  if(!lastCalc) { toast('คำนวณก่อนค่อย Export','error'); return; }
+  toast('กำลังสร้าง PDF...','');
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:'mm', format:'a4' });
+    const W = 210, M = 15;
+    let y = M;
+    const c = lastCalc;
+    const today = new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
+
+    // Brand color helpers (pdf uses RGB 0-255)
+    const COLOR = {
+      ink:[26,24,21], paper:[251,249,244], accent:[255,92,43],
+      good:[46,125,79], mid:[201,138,26], bad:[199,62,29], muted:[107,103,96]
+    };
+
+    // === HEADER BAND ===
+    doc.setFillColor(...COLOR.ink);
+    doc.rect(0, 0, W, 30, 'F');
+    doc.setTextColor(...COLOR.paper);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(20);
+    doc.text('INFLUENCER ROI REPORT', M, 13);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.setTextColor(255, 92, 43);
+    doc.text('// PRE-HIRE EVALUATION', M, 19);
+    doc.setTextColor(...COLOR.paper);
+    doc.setFontSize(8);
+    doc.text(today, W - M, 13, { align:'right' });
+    doc.text('influencer-roi-lab', W - M, 19, { align:'right' });
+    y = 40;
+
+    // === INFLUENCER CARD ===
+    doc.setDrawColor(...COLOR.ink);
+    doc.setLineWidth(0.5);
+    doc.rect(M, y, W-M*2, 26);
+    doc.setFillColor(...COLOR.ink);
+    doc.rect(M, y, W-M*2, 6, 'F');
+    doc.setTextColor(...COLOR.paper);
+    doc.setFontSize(7);
+    doc.setFont('helvetica','bold');
+    doc.text('INFLUENCER PROFILE', M+3, y+4);
+    doc.setTextColor(...COLOR.ink);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(14);
+    doc.text(profileData.channelName || 'ไม่ระบุชื่อช่อง', M+3, y+14);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...COLOR.muted);
+    if(profileData.profileUrl) {
+      doc.textWithLink(profileData.profileUrl, M+3, y+20, { url:profileData.profileUrl });
+    } else {
+      doc.text('— ไม่ได้ระบุลิงก์ —', M+3, y+20);
+    }
+    doc.setTextColor(...COLOR.ink);
+    doc.setFontSize(8);
+    doc.text(`Followers: ${fmtN(c.followers)}  |  Avg Views: ${fmtN(c.avgViews)}  |  Content: ${c.count}`, M+3, y+24);
+    y += 32;
+
+    // === VERDICT ===
+    const vColor = COLOR[c.vClass] || COLOR.mid;
+    doc.setFillColor(...vColor);
+    doc.rect(M, y, W-M*2, 24, 'F');
+    doc.setTextColor(...COLOR.paper);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.text('VERDICT', M+4, y+6);
+    doc.setFontSize(22);
+    doc.text(c.vText.toUpperCase(), M+4, y+16);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.text(c.vSub, M+4, y+21);
+    // Score on right
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(36);
+    doc.text(String(c.score), W-M-4, y+18, { align:'right' });
+    doc.setFontSize(8);
+    doc.setFont('helvetica','normal');
+    doc.text('/ 100', W-M-4, y+22, { align:'right' });
+    y += 30;
+
+    // === KEY METRICS GRID (2x4) ===
+    const metrics = [
+      ['Engagement Rate', c.erPct.toFixed(1)+'%', `เกณฑ์ ~3.5%`],
+      ['CPM', c.cpm!==null?'฿'+fmtN(c.cpm):'—', `เป้า ฿${c.targetCpm}`],
+      ['ROI', c.roi!==null?(c.roi>=0?'+':'')+c.roi.toFixed(0)+'%':'—', c.roi!==null?(c.roi>=0?'มีกำไร':'ขาดทุน'):'-'],
+      ['รายได้คาด', c.aov>0?'฿'+fmtN(c.revenue):'N/A', c.aov>0?`Conv ${c.convRate}%`:'-'],
+      ['Conversions', c.aov>0?fmtN(c.conversions):'—', c.aov>0?'ออเดอร์คาด':'-'],
+      ['CPE', c.cpe!==null?'฿'+fmtN(c.cpe,2):'—', 'ต่อ engagement'],
+      ['Break-even Views', c.breakeven!==null?fmtN(c.breakeven):'—', c.breakeven!==null?(c.totalViews>=c.breakeven?'เพียงพอ':'ยังขาด'):'-'],
+      ['View/Follower', c.vfRatio!==null?c.vfRatio.toFixed(1)+'%':'—', c.ffLevel==='low'?'⚠ เสี่ยง':c.ffLevel==='high'?'ปกติ':'-']
+    ];
+    const colW = (W-M*2)/4, rowH = 18;
+    metrics.forEach((m, i) => {
+      const col = i % 4, row = Math.floor(i/4);
+      const x = M + col*colW, by = y + row*rowH;
+      doc.setDrawColor(...COLOR.ink);
+      doc.setLineWidth(0.3);
+      doc.rect(x, by, colW, rowH);
+      doc.setTextColor(...COLOR.muted);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica','normal');
+      doc.text(m[0].toUpperCase(), x+2, by+4);
+      doc.setTextColor(...COLOR.ink);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(13);
+      doc.text(m[1], x+2, by+11);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(7);
+      doc.setTextColor(...COLOR.muted);
+      doc.text(m[2], x+2, by+16);
+    });
+    y += rowH*2 + 6;
+
+    // === COST BREAKDOWN STRIP ===
+    doc.setDrawColor(...COLOR.ink);
+    doc.setLineWidth(0.5);
+    doc.setFillColor(244,241,234);
+    doc.rect(M, y, W-M*2, 14, 'FD');
+    doc.setTextColor(...COLOR.muted);
+    doc.setFontSize(7);
+    doc.text('TOTAL FEE', M+3, y+5);
+    doc.text('TOTAL VIEWS', M+50, y+5);
+    doc.text('TOTAL ENGAGEMENT', M+95, y+5);
+    if(c.budget>0) doc.text('% OF BUDGET', M+145, y+5);
+    doc.setTextColor(...COLOR.ink);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(11);
+    doc.text('฿'+fmtN(c.totalFee), M+3, y+11);
+    doc.text(fmtN(c.totalViews), M+50, y+11);
+    doc.text(fmtN(c.totalEng), M+95, y+11);
+    if(c.allocPct!==null) doc.text(c.allocPct.toFixed(1)+'%', M+145, y+11);
+    y += 20;
+
+    // === FAKE FOLLOWER WARNING ===
+    if(c.ffLevel) {
+      const ffColor = c.ffLevel==='low'?COLOR.bad:c.ffLevel==='mid'?COLOR.mid:COLOR.good;
+      doc.setDrawColor(...ffColor);
+      doc.setLineWidth(0.8);
+      doc.setFillColor(...ffColor);
+      doc.rect(M, y, 6, 14, 'F');
+      doc.setDrawColor(...COLOR.ink);
+      doc.setLineWidth(0.3);
+      doc.rect(M, y, W-M*2, 14);
+      doc.setTextColor(...COLOR.ink);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(9);
+      doc.text(c.ffTitle, M+10, y+6);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLOR.muted);
+      doc.text(c.ffDesc, M+10, y+11);
+      y += 18;
+    }
+
+    // === REASONS ===
+    if(y + 8 + c.reasons.length*5 > 280) { doc.addPage(); y = M; }
+    doc.setTextColor(...COLOR.ink);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(11);
+    doc.text('※ เหตุผลประกอบการตัดสิน', M, y);
+    y += 6;
+    doc.setDrawColor(...COLOR.ink);
+    doc.setLineWidth(0.3);
+    doc.line(M, y-2, W-M, y-2);
+    c.reasons.forEach(([t, txt]) => {
+      const rColor = t==='pos'?COLOR.good:t==='neg'?COLOR.bad:COLOR.mid;
+      const sign = t==='pos'?'+':t==='neg'?'-':'~';
+      doc.setFillColor(...rColor);
+      doc.rect(M, y, 4, 4, 'F');
+      doc.setTextColor(...COLOR.paper);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(7);
+      doc.text(sign, M+2, y+3, { align:'center' });
+      doc.setTextColor(...COLOR.ink);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(9);
+      const lines = doc.splitTextToSize(txt, W-M*2-8);
+      doc.text(lines, M+7, y+3);
+      y += Math.max(5, lines.length*4 + 1);
+    });
+    y += 4;
+
+    // === FOOTER ===
+    const footerY = 287;
+    doc.setDrawColor(...COLOR.ink);
+    doc.setLineWidth(0.3);
+    doc.line(M, footerY, W-M, footerY);
+    doc.setTextColor(...COLOR.muted);
+    doc.setFontSize(7);
+    doc.setFont('helvetica','normal');
+    doc.text('* ตัวเลขเป็นการประมาณการ ผลจริงขึ้นกับคุณภาพคอนเทนต์และตลาด', M, footerY+4);
+    doc.text(`generated by ${currentUser?.email||'—'}`, W-M, footerY+4, { align:'right' });
+
+    const safeName = (profileData.channelName||'influencer').replace(/[^a-zA-Z0-9ก-๙_-]/g,'_');
+    const fname = `ROI_${safeName}_${new Date().toISOString().slice(0,10)}.pdf`;
+    doc.save(fname);
+    toast('✓ ดาวน์โหลด PDF แล้ว','success');
+  } catch(e) {
+    console.error(e);
+    toast('Export PDF ไม่สำเร็จ: '+e.message,'error');
+  }
+}
+
+// ── EXPORT EXCEL ──
+function exportExcel() {
+  if(!lastCalc) { toast('คำนวณก่อนค่อย Export','error'); return; }
+  try {
+    const c = lastCalc;
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Summary
+    const summary = [
+      ['Influencer ROI Report'],
+      ['Generated', new Date().toLocaleString('th-TH')],
+      ['Generated by', currentUser?.email || '—'],
+      [],
+      ['─── OBJECTIVE ───'],
+      ['Objective', c.objective],
+      [],
+      ['─── INFLUENCER ───'],
+      ['Channel Name', profileData.channelName || '—'],
+      ['Handle', profileData.handle ? '@'+profileData.handle : '—'],
+      ['Profile URL', profileData.profileUrl || '—'],
+      [],
+      ['─── METRICS ───'],
+      ['Followers', c.followers],
+      ['Avg Views / Clip', c.avgViews],
+      ['Avg Engagement / Clip', c.avgEngage],
+      ['Engagement Rate (%)', Number(c.erPct.toFixed(2))],
+      ['View / Follower (%)', c.vfRatio!==null?Number(c.vfRatio.toFixed(2)):'—'],
+      [],
+      ['─── COST ───'],
+      ['Price per Content (฿)', c.price],
+      ['Content Count', c.count],
+      ['Total Fee (฿)', c.totalFee],
+      ['CPM (฿/1K views)', c.cpm!==null?Number(c.cpm.toFixed(2)):'—'],
+      ['Target CPM (฿)', c.targetCpm],
+      ['CPE (฿/engagement)', c.cpe!==null?Number(c.cpe.toFixed(2)):'—'],
+      ['Budget (฿)', c.budget||'—'],
+      ['% of Budget', c.allocPct!==null?Number(c.allocPct.toFixed(2)):'—'],
+      [],
+      ['─── REVENUE ESTIMATE ───'],
+      ['Conversion Rate (%)', c.convRate],
+      ['AOV (฿)', c.aov],
+      ['Margin (%)', c.margin],
+      ['Estimated Conversions', c.conversions],
+      ['Estimated Revenue (฿)', c.revenue],
+      ['Gross Profit (฿)', Number(c.grossProfit.toFixed(2))],
+      ['ROI (%)', c.roi!==null?Number(c.roi.toFixed(2)):'—'],
+      ['Break-even Views', c.breakeven||'—'],
+      [],
+      ['─── VERDICT ───'],
+      ['Score', c.score+'/100'],
+      ['Verdict', c.vText],
+      ['Note', c.vSub],
+      ['Fake Follower Risk', c.ffLevel?(c.ffLevel==='low'?'HIGH RISK':c.ffLevel==='mid'?'MEDIUM':'LOW'):'N/A']
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(summary);
+    ws1['!cols'] = [{wch:30},{wch:40}];
+    // Make profile URL a hyperlink
+    const urlRow = summary.findIndex(r=>r[0]==='Profile URL');
+    if(urlRow>=0 && profileData.profileUrl) {
+      const cellRef = XLSX.utils.encode_cell({c:1, r:urlRow});
+      if(ws1[cellRef]) {
+        ws1[cellRef].l = { Target: profileData.profileUrl };
+      }
+    }
+    XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
+
+    // Sheet 2: Reasons
+    const reasonsData = [['Type','Reason']].concat(
+      c.reasons.map(([t,txt]) => [t==='pos'?'POSITIVE':t==='neg'?'NEGATIVE':'NEUTRAL', txt])
+    );
+    const ws2 = XLSX.utils.aoa_to_sheet(reasonsData);
+    ws2['!cols'] = [{wch:12},{wch:60}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Reasons');
+
+    // Sheet 3: Quick Reference table (one row - easy to combine across reports)
+    const ref = [
+      ['Channel','Profile URL','Followers','Avg Views','ER %','View/Follower %','Price','Count','Total Fee','CPM','Revenue','ROI %','Score','Verdict'],
+      [
+        profileData.channelName||'—',
+        profileData.profileUrl||'—',
+        c.followers, c.avgViews,
+        Number(c.erPct.toFixed(2)),
+        c.vfRatio!==null?Number(c.vfRatio.toFixed(2)):'—',
+        c.price, c.count, c.totalFee,
+        c.cpm!==null?Number(c.cpm.toFixed(2)):'—',
+        c.aov>0?c.revenue:'—',
+        c.roi!==null?Number(c.roi.toFixed(2)):'—',
+        c.score, c.vText
+      ]
+    ];
+    const ws3 = XLSX.utils.aoa_to_sheet(ref);
+    ws3['!cols'] = ref[0].map((_,i) => ({wch: i===1?40:i===0?20:14}));
+    // Hyperlink on profile URL cell
+    if(profileData.profileUrl) {
+      const cellRef = XLSX.utils.encode_cell({c:1, r:1});
+      if(ws3[cellRef]) ws3[cellRef].l = { Target: profileData.profileUrl };
+    }
+    XLSX.utils.book_append_sheet(wb, ws3, 'OneRow_Reference');
+
+    const safeName = (profileData.channelName||'influencer').replace(/[^a-zA-Z0-9ก-๙_-]/g,'_');
+    const fname = `ROI_${safeName}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(wb, fname);
+    toast('✓ ดาวน์โหลด Excel แล้ว','success');
+  } catch(e) {
+    console.error(e);
+    toast('Export Excel ไม่สำเร็จ: '+e.message,'error');
+  }
+}
+
+// ── ADMIN: USER MANAGEMENT ──
+async function loadUsers() {
+  if(currentRole !== 'admin') return;
+  const loadingEl = document.getElementById('user-table-loading');
+  const tableEl = document.getElementById('user-table');
+  const emptyEl = document.getElementById('user-table-empty');
+  loadingEl.classList.remove('hidden');
+  tableEl.classList.add('hidden');
+  emptyEl.classList.add('hidden');
+
+  try {
+    const { data, error } = await sb.from('profiles').select('id, email, role, created_at').order('created_at',{ascending:false});
+    if(error) throw error;
+    loadingEl.classList.add('hidden');
+    if(!data || data.length===0) { emptyEl.classList.remove('hidden'); return; }
+    const tbody = document.getElementById('user-tbody');
+    tbody.innerHTML = data.map(u => {
+      const d = new Date(u.created_at);
+      const dateStr = d.toLocaleDateString('th-TH', {year:'2-digit',month:'short',day:'numeric'});
+      return `<tr>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${escapeHtml(u.email||'—')}</td>
+        <td><span class="role-badge ${u.role}">${u.role}</span></td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">${dateStr}</td>
+        <td style="text-align:right">${u.id===currentUser?.id?'<span style="font-size:10px;color:var(--muted);font-family:JetBrains Mono">YOU</span>':`<button class="del-btn" onclick="delUser('${u.id}','${escapeHtml(u.email||'')}')">✕</button>`}</td>
+      </tr>`;
+    }).join('');
+    tableEl.classList.remove('hidden');
+  } catch(e) {
+    loadingEl.innerHTML = '// '+e.message;
+  }
+}
+
+async function addUser() {
+  const email = document.getElementById('new-email').value.trim();
+  const password = document.getElementById('new-password').value;
+  const role = document.getElementById('new-role').value;
+  if(!email || !password) { toast('กรอก email + password ก่อน','error'); return; }
+
+  const btn = document.getElementById('add-user-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>กำลังเพิ่ม...';
+  try {
+    // sign up creates auth user; trigger should create profile row.
+    // role assignment requires an admin RPC in supabase — fallback: just notify.
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if(error) throw error;
+    if(role === 'admin' && data?.user?.id) {
+      // try update profile role
+      await sb.from('profiles').update({ role }).eq('id', data.user.id);
+    }
+    toast('✓ เพิ่ม user แล้ว','success');
+    document.getElementById('new-email').value = '';
+    document.getElementById('new-password').value = '';
+    loadUsers();
+  } catch(e) {
+    toast('เพิ่มไม่สำเร็จ: '+e.message,'error');
+  }
+  btn.disabled = false; btn.textContent = '+ เพิ่ม User →';
+}
+
+async function delUser(id, email) {
+  if(!confirm(`ลบ user "${email}"?`)) return;
+  try {
+    const { error } = await sb.from('profiles').delete().eq('id', id);
+    if(error) throw error;
+    toast('✓ ลบแล้ว','success');
+    loadUsers();
+  } catch(e) {
+    toast('ลบไม่สำเร็จ: '+e.message,'error');
+  }
+}
 
 // ── TOAST ──
 let _tt;
