@@ -248,9 +248,6 @@
   .person-tab-pill.done::after{content:'✓';position:absolute;top:-5px;right:-5px;background:var(--good);color:var(--paper);font-size:9px;
     width:14px;height:14px;border-radius:50%;display:grid;place-items:center;font-weight:700;}
   .person-tab-pill .del-p{margin-left:4px;opacity:0.5;font-size:13px;line-height:1;}
-  .person-tab-pill .pill-link{margin-left:4px;opacity:0.6;font-size:11px;font-weight:700;padding:0 2px;border-radius:2px;transition:opacity 0.1s;}
-  .person-tab-pill .pill-link:hover{opacity:1;color:var(--tiktok2);}
-  .person-tab-pill.active .pill-link{color:var(--tiktok);}
   .person-tab-pill:hover .del-p{opacity:1;color:var(--bad);}
   .next-person-btn{margin-top:16px;width:100%;padding:14px;background:var(--paper);color:var(--ink);border:2px dashed var(--line);
     font-family:'IBM Plex Sans Thai',sans-serif;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.15s;
@@ -384,7 +381,7 @@
         <div class="field-row">
           <div>
             <label>ผู้ติดตาม <span style="color:var(--muted);font-weight:400;font-size:11px">(Followers)</span></label>
-            <input type="number" id="followers" placeholder="เช่น 50000" min="0" oninput="syncER()">
+            <input type="number" id="followers" placeholder="เช่น 50000" min="0" oninput="calculate()">
             <div class="hint">จำนวนคนที่กด Follow ช่องนี้อยู่ — ดูได้จากหน้าโปรไฟล์ TikTok</div>
           </div>
           <div>
@@ -452,26 +449,18 @@
 
         <div class="field-row">
           <div>
-            <label>Engagement Rate <span style="color:var(--muted);font-weight:400;font-size:11px">(ER%)</span></label>
-            <div class="range-wrap">
-              <input type="range" id="er-rate" min="0.1" max="20" step="0.1" value="4" oninput="syncER()">
-              <div class="range-val" id="er-rate-val">4.0%</div>
-            </div>
-            <div class="hint" id="er-engage-hint">= engagement ประมาณ — (กรอก followers ก่อน)</div>
-            <div class="hint" style="margin-top:4px">ER = สัดส่วนคนที่เห็นแล้วมีปฏิกิริยา (like/comment/share) ต่อ followers — ดูได้จาก TikTok Analytics หรือประมาณจากคลิปที่เห็น · TikTok ~4–8% · IG ~2–4%</div>
-          </div>
-          <div>
             <label>ราคาที่อินฟลูเสนอ (฿) <span style="color:var(--muted);font-weight:400;font-size:11px">ต่อ 1 คลิป</span></label>
             <input type="number" id="price" placeholder="เช่น 8000" min="0" oninput="calculate()">
-            <div class="hint">ราคาที่อินฟลูแจ้งมา ต่อ 1 ชิ้นคอนเทนต์</div>
+            <div class="hint">ราคาที่อินฟลูแจ้งมา ต่อ 1 คลิป — ค่าจ้างรวม = ราคา × จำนวนคลิป</div>
+          </div>
+          <div>
+            <label>Engagement เฉลี่ย/คลิป <span style="color:var(--muted);font-weight:400;font-size:11px">(like+comment+share)</span></label>
+            <input type="number" id="avg-engage" placeholder="เช่น 600" min="0" oninput="calculate()">
+            <div class="hint">บวก like + comment + share จากคลิปล่าสุด 3–5 คลิป แล้วหารจำนวนคลิป · ระบบจะคำนวณ ER% ให้อัตโนมัติ</div>
           </div>
         </div>
 
-        <div class="field-group">
-          <label>จำนวนคอนเทนต์ <span style="color:var(--muted);font-weight:400;font-size:11px">(กี่คลิป/โพสต์)</span></label>
-          <input type="number" id="content-count" placeholder="เช่น 1" min="1" oninput="calculate()">
-          <div class="hint">จำนวนคลิปที่ตกลงจ้างในดีลนี้ — เช่น จ้าง 2 คลิป ราคาคลิปละ ฿5,000 → ค่าจ้างรวม ฿10,000 · ระบบจะเอาวิวและ engagement คูณตามจำนวนนี้ด้วย</div>
-        </div>
+
 
 
 
@@ -595,6 +584,36 @@
     </div>
   </div>
 
+
+<!-- USER DETAIL MODAL -->
+<div id="user-modal" style="display:none;position:fixed;inset:0;background:rgba(26,24,21,0.6);z-index:9998;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--paper);border:2px solid var(--line);box-shadow:8px 8px 0 var(--ink);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
+    <div style="background:var(--ink);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-family:'Fraunces',serif;font-weight:700;font-size:18px;color:var(--paper);">ข้อมูล User</div>
+      <button onclick="closeUserModal()" style="background:transparent;border:none;color:var(--paper);font-size:20px;cursor:pointer;padding:0 4px;line-height:1;">✕</button>
+    </div>
+    <div style="padding:24px;">
+      <input type="hidden" id="modal-uid">
+      <div class="field-group"><label>ชื่อ-นามสกุล</label><input type="text" id="modal-name" placeholder="เช่น สมชาย ใจดี"></div>
+      <div class="field-row">
+        <div class="field-group"><label>เบอร์โทร</label><input type="text" id="modal-phone" placeholder="เช่น 081-234-5678"></div>
+        <div class="field-group"><label>Line / IG / อื่นๆ</label><input type="text" id="modal-contact" placeholder="เช่น @lineid"></div>
+      </div>
+      <div class="field-group"><label>Email</label><input type="email" id="modal-email" disabled style="background:var(--bg);color:var(--muted);cursor:not-allowed;"></div>
+      <div class="field-group"><label>Role</label>
+        <select id="modal-role">
+          <option value="user">User — ใช้งานคำนวณได้</option>
+          <option value="admin">Admin — จัดการ user ได้ด้วย</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+        <button onclick="saveUserModal()" style="padding:12px;background:var(--ink);color:var(--paper);border:2px solid var(--line);font-family:'IBM Plex Sans Thai',sans-serif;font-weight:600;font-size:14px;cursor:pointer;box-shadow:4px 4px 0 var(--accent);transition:all 0.15s;" onmouseover="this.style.transform='translate(-2px,-2px)';this.style.boxShadow='6px 6px 0 var(--accent)'" onmouseout="this.style.transform='';this.style.boxShadow='4px 4px 0 var(--accent)'">บันทึก →</button>
+        <button onclick="closeUserModal()" style="padding:12px;background:var(--paper);color:var(--ink);border:2px solid var(--line);font-family:'IBM Plex Sans Thai',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">ยกเลิก</button>
+      </div>
+      <div id="modal-err" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(199,62,29,0.08);border-left:3px solid var(--bad);font-size:12px;color:var(--bad);font-family:'JetBrains Mono',monospace;"></div>
+    </div>
+  </div>
+</div>
 </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -615,7 +634,7 @@ let currentPersonIdx = 0;
 function createEmptyPerson() {
   return {
     profileData: { channelName:'', handle:'', profileUrl:'', inputUrl:'', avatarUrl:'' },
-    fields: { followers:0, avgViews:0, erRate:4, price:0, count:1, url:'' },
+    fields: { followers:0, avgViews:0, avgEngage:0, price:0, url:'' },
     calc: null,
     clipViews: []
   };
@@ -675,9 +694,8 @@ function saveCurrentFields() {
   p.fields = {
     followers: parseFloat(document.getElementById('followers').value)||0,
     avgViews:  parseFloat(document.getElementById('avg-views').value)||0,
-    erRate: parseFloat(document.getElementById('er-rate').value)||4,
+    avgEngage: parseFloat(document.getElementById('avg-engage').value)||0,
     price:     parseFloat(document.getElementById('price').value)||0,
-    count:     parseInt(document.getElementById('content-count').value)||1,
 
     url:       document.getElementById('tiktokUrl').value
   };
@@ -691,10 +709,8 @@ function loadPersonIntoUI(idx) {
   // Load fields
   document.getElementById('followers').value = p.fields.followers || '';
   document.getElementById('avg-views').value = p.fields.avgViews || '';
-  document.getElementById('er-rate').value = p.fields.erRate || 4;
-  document.getElementById('er-rate-val').textContent = (p.fields.erRate||4).toFixed(1)+'%';
+  document.getElementById('avg-engage').value = p.fields.avgEngage || '';
   document.getElementById('price').value = p.fields.price || '';
-  document.getElementById('content-count').value = p.fields.count || '';
 
   document.getElementById('tiktokUrl').value = p.fields.url;
 
@@ -732,11 +748,8 @@ function renderPersonTabs() {
     const label = p.profileData.channelName || p.profileData.handle ? ('@'+(p.profileData.handle||'')) : `#${i+1}`;
     const isDone = p.calc !== null;
     const isActive = i === currentPersonIdx;
-    const url = persons[i].profileData.profileUrl || '';
-    const linkIcon = url ? `<span class="pill-link" onclick="event.stopPropagation();window.open('${url}','_blank','noopener')" title="เปิด TikTok">↗</span>` : '';
     return `<button class="person-tab-pill${isActive?' active':''}${isDone?' done':''}" onclick="loadPersonIntoUI(${i})">
       ${escapeHtml(label.substring(0,14))}
-      ${linkIcon}
       ${persons.length>1?`<span class="del-p" onclick="event.stopPropagation();deletePerson(${i})">✕</span>`:''}
     </button>`;
   }).join('');
@@ -867,19 +880,6 @@ function openProfileLink(){
   else toast('ยังไม่ได้ดึงลิงก์ — วาง URL แล้วกดดึงข้อมูลก่อน','error');
 }
 
-function syncER(){
-  const v=parseFloat(document.getElementById('er-rate').value)||4;
-  document.getElementById('er-rate-val').textContent=v.toFixed(1)+'%';
-  const followers=parseFloat(document.getElementById('followers').value)||0;
-  const hint=document.getElementById('er-engage-hint');
-  if(followers>0){
-    const eng=Math.round(followers*(v/100));
-    hint.textContent='= engagement ประมาณ '+fmtN(eng)+' ต่อคลิป';
-  } else {
-    hint.textContent='= engagement ประมาณ — (กรอก followers ก่อน)';
-  }
-  calculate();
-}
 // ── CALCULATE ──
 function fmt(n){if(n===null||isNaN(n))return'—';if(Math.abs(n)>=1000000)return(n/1000000).toFixed(2)+'M';if(Math.abs(n)>=1000)return(n/1000).toFixed(1)+'K';return n.toFixed(0);}
 function fmtN(n,d=0){if(n===null||isNaN(n))return'—';return n.toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});}
@@ -887,10 +887,9 @@ function fmtN(n,d=0){if(n===null||isNaN(n))return'—';return n.toLocaleString('
 function calculate(){
   const followers=parseFloat(document.getElementById('followers').value)||0;
   const avgViews=parseFloat(document.getElementById('avg-views').value)||0;
-  const erRate=parseFloat(document.getElementById('er-rate').value)||4;
-  const avgEngage=followers>0 ? Math.round(followers*(erRate/100)) : 0;
+  const avgEngage=parseFloat(document.getElementById('avg-engage').value)||0;
   const price=parseFloat(document.getElementById('price').value)||0;
-  const count=parseInt(document.getElementById('content-count').value)||1;
+  const count=1;
 
   if(!price&&!avgViews){
     document.getElementById('empty-state').classList.remove('hidden');
@@ -904,8 +903,8 @@ function calculate(){
   const totalViews = avgViews * count;
   const totalEng = avgEngage * count;
 
-  // ER comes directly from slider
-  const erPct = erRate;
+  // ER computed from engagement / followers
+  const erPct = followers>0 && avgEngage>0 ? (avgEngage/followers)*100 : 0;
 
   // CPM: cost / views × 1000
   const cpm = totalViews>0 ? (totalFee/totalViews)*1000 : null;
@@ -1290,13 +1289,14 @@ async function loadUsers() {
       const d=new Date(u.created_at);
       const dateStr=d.toLocaleDateString('th-TH',{year:'2-digit',month:'short',day:'numeric'});
       const contactInfo = [u.phone,u.contact].filter(Boolean).join(' · ') || '—';
-      return `<tr>
-        <td style="font-size:13px;font-weight:500">${escapeHtml(u.display_name||'—')}</td>
+      const hasInfo = u.display_name||u.phone||u.contact;
+      return `<tr style="cursor:pointer;" onclick="openUserModal('${u.id}','${escapeHtml(u.email||'')}','${escapeHtml(u.display_name||'')}','${escapeHtml(u.phone||'')}','${escapeHtml(u.contact||'')}','${u.role||'user'}')">
+        <td style="font-size:13px;font-weight:500">${hasInfo?escapeHtml(u.display_name||'—'):'<span style=\"color:var(--accent);font-size:11px;font-family:JetBrains Mono\">+ กดเพื่อเพิ่มข้อมูล</span>'}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${escapeHtml(u.email||'—')}</td>
         <td style="font-size:12px;color:var(--muted)">${escapeHtml(contactInfo)}</td>
         <td><span class="role-badge ${u.role}">${u.role}</span></td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">${dateStr}</td>
-        <td style="text-align:right">${u.id===currentUser?.id?'<span style="font-size:10px;color:var(--muted);font-family:JetBrains Mono">YOU</span>':`<button class="del-btn" onclick="delUser('${u.id}','${escapeHtml(u.email||'')}')">✕</button>`}</td>
+        <td style="text-align:right" onclick="event.stopPropagation()">${u.id===currentUser?.id?'<span style="font-size:10px;color:var(--muted);font-family:JetBrains Mono">YOU</span>':`<button class="del-btn" onclick="delUser('${u.id}','${escapeHtml(u.email||'')}')">✕</button>`}</td>
       </tr>`;
     }).join('');
     tableEl.classList.remove('hidden');
@@ -1352,6 +1352,55 @@ function toast(msg,type=''){
   el.classList.add('show'); clearTimeout(_tt);
   _tt=setTimeout(()=>el.classList.remove('show'),3000);
 }
+
+
+// ── USER MODAL ──
+function openUserModal(id, email, name, phone, contact, role) {
+  document.getElementById('modal-uid').value = id;
+  document.getElementById('modal-email').value = email;
+  document.getElementById('modal-name').value = name;
+  document.getElementById('modal-phone').value = phone;
+  document.getElementById('modal-contact').value = contact;
+  document.getElementById('modal-role').value = role || 'user';
+  document.getElementById('modal-err').style.display = 'none';
+  const modal = document.getElementById('user-modal');
+  modal.style.display = 'flex';
+  setTimeout(() => modal.querySelector('input:not([disabled])').focus(), 100);
+}
+
+function closeUserModal() {
+  document.getElementById('user-modal').style.display = 'none';
+}
+
+async function saveUserModal() {
+  const id = document.getElementById('modal-uid').value;
+  const name = document.getElementById('modal-name').value.trim();
+  const phone = document.getElementById('modal-phone').value.trim();
+  const contact = document.getElementById('modal-contact').value.trim();
+  const role = document.getElementById('modal-role').value;
+  const errEl = document.getElementById('modal-err');
+  errEl.style.display = 'none';
+  try {
+    const { error } = await sb.from('profiles').update({
+      display_name: name || null,
+      phone: phone || null,
+      contact: contact || null,
+      role
+    }).eq('id', id);
+    if(error) throw error;
+    toast('บันทึกแล้ว', 'success');
+    closeUserModal();
+    loadUsers();
+  } catch(e) {
+    errEl.textContent = '// ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+// Close modal on backdrop click
+document.getElementById('user-modal').addEventListener('click', function(e) {
+  if(e.target === this) closeUserModal();
+});
 
 initAuth();
 </script>
