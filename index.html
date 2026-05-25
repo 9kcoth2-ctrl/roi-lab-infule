@@ -756,6 +756,11 @@ async function scanAllImages() {
   } catch(e) {
     status.className = 'scan-status error';
     status.textContent = '✗ เกิดข้อผิดพลาด: ' + e.message;
+  }
+  btn.disabled=false;
+  btn.textContent='🔍 อ่านตัวเลขจากรูป · ' + imageList.length + ' รูป';
+}
+
 // ── ADMIN USER MANAGEMENT ──
 async function addUser() {
   const email=document.getElementById('new-email').value.trim();
