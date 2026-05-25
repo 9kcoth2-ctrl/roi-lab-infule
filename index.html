@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
@@ -682,6 +683,10 @@
 </div>
 </div>
 </div>
+
+<!-- HIDDEN PDF TEMPLATE -->
+<div id="pdf-template" style="display:none;position:fixed;left:-9999px;top:0;width:794px;background:#fff;font-family:'IBM Plex Sans Thai',sans-serif;color:#1A1815;padding:0;">
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1224,21 +1229,158 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
 async function exportAllPDF() {
   const donePeople = persons.filter(p=>p.calc!==null);
   if(!donePeople.length){toast('ยังไม่มีข้อมูลพร้อม Export','error');return;}
-  toast('กำลังสร้าง PDF...','');
+  toast('กำลังสร้าง PDF... รอสักครู่','');
+
   try {
-    const {jsPDF}=window.jspdf;
-    const doc=new jsPDF({unit:'mm',format:'a4'});
-    registerThaiFont(doc);
-    const W=210, M=15;
-    let isFirst=true;
-    donePeople.forEach(p=>{
-      buildPersonPDFPage(doc, p.calc, p.profileData, isFirst, W, M);
-      isFirst=false;
-    });
-    const fname=`ROI_Report_${donePeople.length}คน_${new Date().toISOString().slice(0,10)}.pdf`;
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({unit:'mm', format:'a4', orientation:'portrait'});
+    const pageW = 794, pageH = 1123; // A4 at 96dpi
+
+    for(let pi=0; pi<donePeople.length; pi++){
+      const p = donePeople[pi];
+      const html = buildPDFHTML(p.calc, p.profileData);
+      const el = document.getElementById('pdf-template');
+      el.style.display = 'block';
+      el.innerHTML = html;
+      el.style.width = pageW+'px';
+
+      await new Promise(r=>setTimeout(r,120));
+
+      const canvas = await html2canvas(el, {
+        scale:2, useCORS:true, allowTaint:true,
+        backgroundColor:'#ffffff',
+        width:pageW, windowWidth:pageW
+      });
+
+      el.style.display = 'none';
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const imgW = 210;
+      const imgH = (canvas.height / canvas.width) * imgW;
+
+      if(pi > 0) doc.addPage();
+      doc.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
+    }
+
+    const fname = `ROI_Report_${donePeople.length}คน_${new Date().toISOString().slice(0,10)}.pdf`;
     doc.save(fname);
     toast(`PDF ${donePeople.length} คน ดาวน์โหลดแล้ว`,'success');
-  } catch(e){ console.error(e); toast('Export PDF ไม่สำเร็จ: '+e.message,'error'); }
+  } catch(e){
+    console.error(e);
+    document.getElementById('pdf-template').style.display='none';
+    toast('Export PDF ไม่สำเร็จ: '+e.message,'error');
+  }
+}
+
+function buildPDFHTML(c, pd) {
+  const today = new Date();
+  const thDate = `${today.getDate()}/${today.getMonth()+1}/${today.getFullYear()+543}`;
+  const vColor = c.vClass==='good'?'#2E7D4F':c.vClass==='mid'?'#C98A1A':'#C73E1D';
+  const vText = c.vClass==='good'?'คุ้มค่า':c.vClass==='mid'?'พอได้':'ไม่คุ้ม';
+  const vSub = c.vClass==='good'?'ตัวเลขบ่งชี้ว่าน่าจ้าง':c.vClass==='mid'?'มีจุดที่ควรพิจารณาเพิ่มเติม':'ตัวเลขยังไม่น่าจ้าง ควรต่อรอง';
+
+  const erStatus = c.erPct>=5?'ดีมาก':c.erPct>=3?'ปกติ':c.erPct>0?'ต่ำกว่าเกณฑ์':'—';
+  const erColor = c.erPct>=5?'#2E7D4F':c.erPct>=3?'#C98A1A':'#C73E1D';
+  const cpmStatus = c.cpm!==null?(c.cpm<50?'ถูกมาก':c.cpm<=100?'ราคาตลาด':c.cpm<=200?'แพงนิดหน่อย':'แพงเกินไป'):'—';
+  const cpmColor = c.cpm!==null?(c.cpm<50?'#2E7D4F':c.cpm<=100?'#C98A1A':'#C73E1D'):'#6B6760';
+  const cpeStatus = c.cpe!==null?(c.cpe<10?'ดีมาก':c.cpe<=30?'ปกติ':'แพง'):'—';
+  const cpeColor = c.cpe!==null?(c.cpe<10?'#2E7D4F':c.cpe<=30?'#C98A1A':'#C73E1D'):'#6B6760';
+  const vfStatus = c.vfRatio!==null?(c.vfRatio>=50?'ดี':c.vfRatio>=20?'ค่อนข้างต่ำ':'ต่ำมาก เสี่ยง'):'—';
+  const vfColor = c.vfRatio!==null?(c.vfRatio>=50?'#2E7D4F':c.vfRatio>=20?'#C98A1A':'#C73E1D'):'#6B6760';
+
+  const reasonRows = c.reasons.map(([t,txt])=>{
+    const bg = t==='pos'?'#2E7D4F':t==='neg'?'#C73E1D':'#C98A1A';
+    const sign = t==='pos'?'+':t==='neg'?'−':'~';
+    return `<tr><td style="width:24px;text-align:center;vertical-align:top;padding:6px 0">
+      <span style="display:inline-block;width:18px;height:18px;background:${bg};color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center;">${sign}</span>
+    </td><td style="padding:6px 0 6px 8px;font-size:13px;border-bottom:1px dashed #ddd;vertical-align:top">${txt}</td></tr>`;
+  }).join('');
+
+  return `<div style="font-family:'IBM Plex Sans Thai',Sarabun,sans-serif;background:#fff;padding:0;width:794px;">
+    <!-- HEADER -->
+    <div style="background:#1A1815;padding:20px 28px;display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:22px;font-weight:800;color:#FBF9F4;letter-spacing:-0.02em;">INFLUENCER ROI REPORT</div>
+        <div style="font-size:11px;color:#FF5C2B;margin-top:4px;letter-spacing:0.1em;">ประเมินก่อนจ้าง</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:#FBF9F4;opacity:0.7;">${thDate}</div>
+        <div style="font-size:10px;color:#FBF9F4;opacity:0.5;margin-top:2px;">${currentUser?.email||'—'}</div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div style="margin:20px 28px 0;border:2px solid #1A1815;">
+      <div style="background:#1A1815;padding:6px 12px;font-size:10px;color:#FBF9F4;letter-spacing:0.15em;">ข้อมูลอินฟลูเอนเซอร์</div>
+      <div style="padding:14px 16px;">
+        <div style="font-size:20px;font-weight:700;margin-bottom:4px;">${pd.channelName||pd.handle||'ไม่ระบุ'}</div>
+        <div style="font-size:12px;color:#6B6760;">${pd.profileUrl||'ไม่ได้ระบุลิงก์'}</div>
+        <div style="font-size:11px;color:#6B6760;margin-top:6px;">
+          Followers: ${fmtN(c.followers)} &nbsp;|&nbsp; ยอดวิวเฉลี่ย: ${fmtN(c.avgViews)} &nbsp;|&nbsp; ER: ${c.erPct>0?c.erPct.toFixed(1)+'%':'—'} &nbsp;|&nbsp; ค่าจ้าง: ฿${fmtN(c.totalFee)}
+        </div>
+      </div>
+    </div>
+
+    <!-- VERDICT -->
+    <div style="margin:12px 28px 0;background:${vColor};padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.7);letter-spacing:0.2em;margin-bottom:4px;">ผลการประเมิน</div>
+        <div style="font-size:36px;font-weight:800;color:#fff;line-height:1;">${vText}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.85);margin-top:4px;">${vSub}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:56px;font-weight:800;color:#fff;line-height:1;">${c.score}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.7);">/ 100</div>
+      </div>
+    </div>
+
+    <!-- METRICS 2x2 -->
+    <div style="margin:12px 28px 0;display:grid;grid-template-columns:1fr 1fr;border:2px solid #1A1815;">
+      ${[
+        ['Engagement Rate','คนที่เห็นโพสต์แล้วมี like/comment/share',c.erPct>0?c.erPct.toFixed(1)+'%':'—',erStatus,erColor,'5%+ ดีมาก · 3–5% ปกติ · ต่ำกว่า 3% แย่'],
+        ['CPM (฿/1,000 วิว)','ต้นทุนต่อ 1,000 คนที่เห็นคอนเทนต์',c.cpm!==null?'฿'+fmtN(c.cpm,0):'—',cpmStatus,cpmColor,'<฿50 ถูกมาก · ฿50-100 ตลาด · >฿200 แพง'],
+        ['CPE (฿/engagement)','ต้นทุนต่อ 1 like/comment/share',c.cpe!==null?'฿'+fmtN(c.cpe,2):'—',cpeStatus,cpeColor,'<฿10 ดีมาก · ฿10-30 ปกติ · >฿30 แพง'],
+        ['View / Follower','ยอดวิวเทียบกับ followers (TikTok >100% ปกติ)',c.vfRatio!==null?c.vfRatio.toFixed(1)+'%':'—',vfStatus,vfColor,'>100% ดี · 50-100% ต่ำ · <20% เสี่ยง']
+      ].map((m,i)=>`
+        <div style="padding:14px 16px;${i%2===0?'border-right:1.5px solid #1A1815;':''}${i<2?'border-bottom:1.5px solid #1A1815;':''}">
+          <div style="font-size:10px;letter-spacing:0.12em;color:#6B6760;text-transform:uppercase;margin-bottom:6px;">${m[0]}</div>
+          <div style="font-size:11px;color:#6B6760;margin-bottom:8px;">${m[1]}</div>
+          <div style="font-size:26px;font-weight:700;line-height:1;margin-bottom:4px;">${m[2]}</div>
+          <div style="font-size:12px;font-weight:600;color:${m[4]};">${m[3]}</div>
+          <div style="font-size:10px;color:#9A9693;margin-top:4px;">${m[5]}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- COST STRIP -->
+    <div style="margin:12px 28px 0;background:#F4F1EA;border:2px solid #1A1815;padding:12px 16px;display:flex;gap:40px;">
+      ${[['ค่าจ้างรวม','฿'+fmtN(c.totalFee)],['ยอดวิวรวม',fmtN(c.totalViews)],['Engagement รวม',fmtN(c.totalEng)]].map(s=>`
+        <div><div style="font-size:10px;letter-spacing:0.12em;color:#6B6760;text-transform:uppercase;">${s[0]}</div>
+        <div style="font-size:18px;font-weight:700;">${s[1]}</div></div>`).join('')}
+    </div>
+
+    ${c.ffLevel?`
+    <!-- FF ALERT -->
+    <div style="margin:12px 28px 0;border:2px solid #1A1815;display:flex;border-left:6px solid ${vfColor};">
+      <div style="padding:12px 16px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:2px;">${c.ffTitle}</div>
+        <div style="font-size:12px;color:#6B6760;">${c.ffDesc}</div>
+      </div>
+    </div>`:''}
+
+    <!-- REASONS -->
+    <div style="margin:12px 28px 20px;border:2px solid #1A1815;padding:16px 20px;">
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+        <span style="color:#FF5C2B;">※</span> เหตุผลประกอบการตัดสิน
+      </div>
+      <table style="width:100%;border-collapse:collapse;">${reasonRows}</table>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="margin:0 28px 24px;border-top:1px solid #ddd;padding-top:8px;display:flex;justify-content:space-between;">
+      <div style="font-size:10px;color:#9A9693;">* ตัวเลขเป็นการประมาณการ ผลจริงขึ้นกับคุณภาพคอนเทนต์</div>
+      <div style="font-size:10px;color:#9A9693;">Influencer ROI Lab — 9K Online</div>
+    </div>
+  </div>`;
 }
 
 // ── EXPORT EXCEL ──
