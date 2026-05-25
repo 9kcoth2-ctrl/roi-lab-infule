@@ -200,6 +200,42 @@
 
   .footnote { margin-top:20px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-align:center; letter-spacing:0.05em; line-height:1.6; }
 
+  /* === VIEW AVERAGER === */
+  .avg-helper { margin-top:8px; border:1.5px dashed var(--line); background:var(--bg); }
+  .avg-helper-head { padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:var(--bg); border-bottom:1.5px dashed var(--line); transition:background 0.12s; }
+  .avg-helper-head:hover { background:var(--paper); }
+  .avg-helper-head .lab { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:0.04em; display:flex; align-items:center; gap:6px; }
+  .avg-helper-head .lab::before { content:'⊕'; color:var(--accent); font-weight:700; font-size:14px; }
+  .avg-helper.open .avg-helper-head .lab::before { content:'⊖'; }
+  .avg-helper-head .count { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--accent); font-weight:600; }
+  .avg-helper-body { display:none; padding:12px; }
+  .avg-helper.open .avg-helper-body { display:block; }
+  .avg-clip-label { font-family:'Fraunces',serif; font-weight:600; font-size:14px; margin-bottom:8px; color:var(--ink); text-align:center; }
+  .avg-clip-label .num { color:var(--accent); }
+  .avg-btn-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:10px; }
+  .avg-btn { border:1.5px solid var(--line); background:var(--paper); padding:8px 6px; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.1s; color:var(--ink); }
+  .avg-btn:hover { background:var(--ink); color:var(--paper); transform:translate(-1px,-1px); box-shadow:2px 2px 0 var(--accent); }
+  .avg-btn:active { transform:translate(1px,1px); box-shadow:none; }
+  .avg-btn.skip { border-style:dashed; color:var(--muted); grid-column:span 2; }
+  .avg-btn.skip:hover { background:var(--muted); color:var(--paper); }
+  .avg-clip-list { margin-bottom:10px; display:flex; flex-wrap:wrap; gap:5px; min-height:22px; }
+  .avg-clip-chip { background:var(--paper); border:1.5px solid var(--line); padding:3px 8px; font-family:'JetBrains Mono',monospace; font-size:11px; display:inline-flex; align-items:center; gap:5px; }
+  .avg-clip-chip .x { cursor:pointer; color:var(--muted); font-weight:700; padding:0 2px; }
+  .avg-clip-chip .x:hover { color:var(--bad); }
+  .avg-clip-chip .n { color:var(--muted); font-size:9px; }
+  .avg-empty-list { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); font-style:italic; }
+  .avg-actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .avg-actions button { padding:8px; font-family:'IBM Plex Sans Thai',sans-serif; font-weight:600; font-size:12px; cursor:pointer; border:1.5px solid var(--line); transition:all 0.12s; }
+  .avg-actions .calc { background:var(--ink); color:var(--paper); box-shadow:3px 3px 0 var(--accent); }
+  .avg-actions .calc:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--accent); }
+  .avg-actions .calc:disabled { background:var(--muted); cursor:not-allowed; box-shadow:none; transform:none; }
+  .avg-actions .reset { background:var(--paper); color:var(--ink); }
+  .avg-actions .reset:hover { background:var(--bad); color:var(--paper); border-color:var(--bad); }
+  .avg-result { margin-top:8px; padding:8px 10px; background:var(--paper); border:1.5px solid var(--accent); font-family:'JetBrains Mono',monospace; font-size:12px; text-align:center; display:none; }
+  .avg-result.show { display:block; }
+  .avg-result .v { font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--accent); }
+  .avg-max-note { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); text-align:center; margin-top:6px; }
+
   /* Admin */
   .admin-layout { display:grid; grid-template-columns:380px 1fr; gap:20px; align-items:start; }
   @media(max-width:900px){ .admin-layout{grid-template-columns:1fr;} }
@@ -243,8 +279,8 @@
     <div class="login-card">
       <h2>เข้าสู่ระบบ</h2>
       <div class="sub">// ติดต่อ Admin เพื่อขอบัญชี</div>
-      <div class="field-group"><label>Email</label><input type="email" id="login-email" placeholder="your@email.com"></div>
-      <div class="field-group"><label>Password</label><input type="password" id="login-password" placeholder="••••••••"></div>
+      <div class="field-group"><label>Email <span style="color:var(--muted);font-weight:400;font-size:11px">(อีเมล)</span></label><input type="email" id="login-email" placeholder="your@email.com"></div>
+      <div class="field-group"><label>Password <span style="color:var(--muted);font-weight:400;font-size:11px">(รหัสผ่าน)</span></label><input type="password" id="login-password" placeholder="••••••••"></div>
       <button class="btn-primary" id="login-btn" onclick="doLogin()">เข้าสู่ระบบ →</button>
       <div class="login-err" id="login-err"></div>
     </div>
@@ -314,6 +350,39 @@
           <div>
             <label>ยอดวิวเฉลี่ย/คลิป</label>
             <input type="number" id="avg-views" value="15000" min="0" oninput="calculate()">
+            <!-- View averager helper -->
+            <div class="avg-helper" id="avg-helper">
+              <div class="avg-helper-head" onclick="document.getElementById('avg-helper').classList.toggle('open')">
+                <span class="lab">เครื่องคิดเฉลี่ย</span>
+                <span class="count" id="avg-count">0 คลิป</span>
+              </div>
+              <div class="avg-helper-body">
+                <div class="avg-clip-label">คลิปที่ <span class="num" id="avg-current">1</span> — เลือกยอดวิว</div>
+                <div class="avg-btn-grid">
+                  <button class="avg-btn" onclick="pickView(10000)">10K</button>
+                  <button class="avg-btn" onclick="pickView(20000)">20K</button>
+                  <button class="avg-btn" onclick="pickView(50000)">50K</button>
+                  <button class="avg-btn" onclick="pickView(70000)">70K</button>
+                  <button class="avg-btn" onclick="pickView(100000)">100K</button>
+                  <button class="avg-btn" onclick="pickView(200000)">200K</button>
+                  <button class="avg-btn" onclick="pickView(500000)">500K</button>
+                  <button class="avg-btn" onclick="pickView(700000)">700K</button>
+                  <button class="avg-btn" onclick="pickView(1000000)">1M</button>
+                  <button class="avg-btn" onclick="pickView(2000000)">2M</button>
+                  <button class="avg-btn" onclick="pickView(3000000)">3M</button>
+                  <button class="avg-btn skip" onclick="skipClip()">ข้าม / ใส่เอง</button>
+                </div>
+                <div class="avg-clip-list" id="avg-list"><span class="avg-empty-list">ยังไม่ได้กดยอดวิว</span></div>
+                <div class="avg-actions">
+                  <button class="reset" onclick="resetClips()">↺ ล้าง</button>
+                  <button class="calc" id="avg-calc-btn" onclick="applyAverage()" disabled>คำนวณเฉลี่ย</button>
+                </div>
+                <div class="avg-result" id="avg-result">
+                  เฉลี่ย <span class="v" id="avg-result-val">—</span> · ใส่ในช่องด้านบนแล้ว
+                </div>
+                <div class="avg-max-note">สูงสุด 10 คลิป · กด "ข้าม" ถ้ายอดวิวอยู่นอกตัวเลือก แล้วพิมพ์เองในช่องด้านบน</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -330,7 +399,7 @@
         </div>
 
         <div class="field-group">
-          <label>Engagement Rate (%)</label>
+          <label>Engagement Rate <span style="color:var(--muted);font-weight:400;font-size:11px">(อัตราการมีส่วนร่วม %)</span></label>
           <div class="range-wrap">
             <input type="range" id="eng-rate" min="0.1" max="20" step="0.1" value="4" oninput="syncEng()">
             <div class="range-val" id="eng-rate-val">4.0%</div>
@@ -413,13 +482,13 @@
           <div id="ff-alert-wrap"></div>
 
           <div class="metrics animate-in" style="animation-delay:.1s">
-            <div class="metric"><div class="metric-label">Engagement Rate</div><div class="metric-value"><span id="m-er">—</span><span class="unit">%</span></div><div id="m-er-bench" class="metric-bench">—</div></div>
-            <div class="metric"><div class="metric-label">CPM จริง</div><div class="metric-value">฿<span id="m-cpm">—</span></div><div id="m-cpm-bench" class="metric-bench">—</div></div>
+            <div class="metric"><div class="metric-label">Engagement Rate <span style="opacity:0.6">(การมีส่วนร่วม)</span></div><div class="metric-value"><span id="m-er">—</span><span class="unit">%</span></div><div id="m-er-bench" class="metric-bench">—</div></div>
+            <div class="metric"><div class="metric-label">CPM จริง <span style="opacity:0.6">(ต้นทุน/1พันวิว)</span></div><div class="metric-value">฿<span id="m-cpm">—</span></div><div id="m-cpm-bench" class="metric-bench">—</div></div>
             <div class="metric"><div class="metric-label">รายได้คาด</div><div class="metric-value">฿<span id="m-rev">—</span></div><div id="m-rev-bench" class="metric-bench">—</div></div>
-            <div class="metric"><div class="metric-label">ROI</div><div class="metric-value"><span id="m-roi">—</span><span class="unit">%</span></div><div id="m-roi-bench" class="metric-bench">—</div></div>
-            <div class="metric"><div class="metric-label">Est. Conversions</div><div class="metric-value"><span id="m-conv">—</span><span class="unit">ออเดอร์</span></div><div id="m-conv-bench" class="metric-bench">—</div></div>
-            <div class="metric"><div class="metric-label">CPE</div><div class="metric-value">฿<span id="m-cpe">—</span></div><div class="metric-bench">ต่อ 1 engagement</div></div>
-            <div class="metric"><div class="metric-label">Break-even Views</div><div class="metric-value"><span id="m-be">—</span></div><div id="m-be-bench" class="metric-bench">—</div></div>
+            <div class="metric"><div class="metric-label">ROI <span style="opacity:0.6">(ผลตอบแทน)</span></div><div class="metric-value"><span id="m-roi">—</span><span class="unit">%</span></div><div id="m-roi-bench" class="metric-bench">—</div></div>
+            <div class="metric"><div class="metric-label">Est. Conversions <span style="opacity:0.6">(ยอดขายคาด)</span></div><div class="metric-value"><span id="m-conv">—</span><span class="unit">ออเดอร์</span></div><div id="m-conv-bench" class="metric-bench">—</div></div>
+            <div class="metric"><div class="metric-label">CPE <span style="opacity:0.6">(ต้นทุน/engagement)</span></div><div class="metric-value">฿<span id="m-cpe">—</span></div><div class="metric-bench">ต่อ 1 engagement</div></div>
+            <div class="metric"><div class="metric-label">Break-even Views <span style="opacity:0.6">(วิวจุดคุ้มทุน)</span></div><div class="metric-value"><span id="m-be">—</span></div><div id="m-be-bench" class="metric-bench">—</div></div>
             <div class="metric"><div class="metric-label">% งบที่ใช้</div><div class="metric-value"><span id="m-alloc">—</span><span class="unit">%</span></div><div class="metric-bench">ของงบแคมเปญ</div></div>
           </div>
 
@@ -452,9 +521,9 @@
       <div class="panel">
         <div class="section-label">เพิ่ม User ใหม่</div>
         <h2 class="section-title">สร้างบัญชี</h2>
-        <div class="field-group"><label>Email</label><input type="email" id="new-email" placeholder="employee@email.com"></div>
-        <div class="field-group"><label>Password เริ่มต้น</label><input type="text" id="new-password" placeholder="ตั้งรหัสให้เขา เช่น roi2024"><div class="hint">แจ้งรหัสให้พนักงานเอง</div></div>
-        <div class="field-group"><label>Role</label><select id="new-role"><option value="user">User — ใช้งานคำนวณได้</option><option value="admin">Admin — จัดการ user ได้ด้วย</option></select></div>
+        <div class="field-group"><label>Email <span style="color:var(--muted);font-weight:400;font-size:11px">(อีเมล)</span></label><input type="email" id="new-email" placeholder="employee@email.com"></div>
+        <div class="field-group"><label>Password เริ่มต้น <span style="color:var(--muted);font-weight:400;font-size:11px">(รหัสผ่าน)</span></label><input type="text" id="new-password" placeholder="ตั้งรหัสให้เขา เช่น roi2024"><div class="hint">แจ้งรหัสให้พนักงานเอง</div></div>
+        <div class="field-group"><label>Role <span style="color:var(--muted);font-weight:400;font-size:11px">(สิทธิ์)</span></label><select id="new-role"><option value="user">User — ใช้งานคำนวณได้</option><option value="admin">Admin — จัดการ user ได้ด้วย</option></select></div>
         <button class="calc-btn" id="add-user-btn" onclick="addUser()">+ เพิ่ม User →</button>
       </div>
       <div>
@@ -651,6 +720,83 @@ function applyTier(tier,el){
 }
 function syncEng(){const v=parseFloat(document.getElementById('eng-rate').value);document.getElementById('eng-rate-val').textContent=v.toFixed(1)+'%';calculate();}
 function syncConv(){const v=parseFloat(document.getElementById('conv-rate').value);document.getElementById('conv-rate-val').textContent=v.toFixed(1)+'%';calculate();}
+
+// ── VIEW AVERAGER ──
+let clipViews = []; // array of numbers (each clip's view count)
+const MAX_CLIPS = 10;
+
+function fmtView(n) {
+  if(n >= 1000000) return (n/1000000) + 'M';
+  if(n >= 1000) return (n/1000) + 'K';
+  return n.toString();
+}
+
+function renderClipList() {
+  const list = document.getElementById('avg-list');
+  const count = document.getElementById('avg-count');
+  const current = document.getElementById('avg-current');
+  const calcBtn = document.getElementById('avg-calc-btn');
+
+  count.textContent = clipViews.length + ' คลิป';
+  current.textContent = Math.min(clipViews.length + 1, MAX_CLIPS);
+  calcBtn.disabled = clipViews.length === 0;
+
+  if(clipViews.length === 0) {
+    list.innerHTML = '<span class="avg-empty-list">ยังไม่ได้กดยอดวิว</span>';
+    return;
+  }
+  list.innerHTML = clipViews.map((v, i) =>
+    `<span class="avg-clip-chip"><span class="n">#${i+1}</span> ${fmtView(v)} <span class="x" onclick="removeClip(${i})">✕</span></span>`
+  ).join('');
+}
+
+function pickView(n) {
+  if(clipViews.length >= MAX_CLIPS) {
+    toast('ครบ 10 คลิปแล้ว — กดคำนวณเฉลี่ยได้เลย','');
+    return;
+  }
+  clipViews.push(n);
+  document.getElementById('avg-result').classList.remove('show');
+  renderClipList();
+  if(clipViews.length === MAX_CLIPS) {
+    toast('ครบ 10 คลิป — กดคำนวณเฉลี่ยได้','success');
+  }
+}
+
+function skipClip() {
+  if(clipViews.length >= MAX_CLIPS) return;
+  // เปิด helper ให้ user เห็น input ด้านบน
+  document.getElementById('avg-views').focus();
+  document.getElementById('avg-views').select();
+  toast('พิมพ์ยอดวิวในช่องด้านบนได้เลย','');
+}
+
+function removeClip(idx) {
+  clipViews.splice(idx, 1);
+  document.getElementById('avg-result').classList.remove('show');
+  renderClipList();
+}
+
+function resetClips() {
+  clipViews = [];
+  document.getElementById('avg-result').classList.remove('show');
+  renderClipList();
+}
+
+function applyAverage() {
+  if(clipViews.length === 0) return;
+  const avg = Math.round(clipViews.reduce((a,b) => a+b, 0) / clipViews.length);
+  document.getElementById('avg-views').value = avg;
+  const resultEl = document.getElementById('avg-result');
+  const resultVal = document.getElementById('avg-result-val');
+  resultVal.textContent = fmtN(avg) + ' (' + fmtView(avg) + ')';
+  resultEl.classList.add('show');
+  toast('✓ ใส่ค่าเฉลี่ยในช่องด้านบนแล้ว','success');
+  calculate();
+}
+
+// Initialize empty state
+renderClipList();
 
 // ── CALCULATE ──
 function fmt(n){if(n===null||isNaN(n))return'—';if(Math.abs(n)>=1000000)return(n/1000000).toFixed(2)+'M';if(Math.abs(n)>=1000)return(n/1000).toFixed(1)+'K';return n.toFixed(0);}
