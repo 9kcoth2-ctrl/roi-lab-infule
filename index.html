@@ -295,20 +295,25 @@
           <div id="uploadPlaceholder">
             <div class="upload-icon">⤓</div>
             <p><strong>คลิกเลือก</strong> · ลาก · หรือ <kbd>Ctrl+V</kbd></p>
-            <div class="hint">PNG · JPG · max 10MB · แคปให้เห็น followers + วิวคลิปหลายๆ อัน</div>
+            <div class="hint">เพิ่มได้หลายรูป · PNG · JPG · max 10MB/รูป</div>
           </div>
-          <div id="uploadPreview" class="preview-wrap hidden">
-            <img id="previewImg" alt="preview">
-            <button class="preview-remove" onclick="removeImage(event)">×</button>
-          </div>
-          <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+          <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFileSelect(event)">
         </div>
 
-        <button class="scan-btn hidden" id="scanBtn" onclick="scanImage()">🔍 ให้ AI อ่านตัวเลข (Gemini)</button>
+        <div id="multiPreview" class="hidden" style="margin-top:10px;">
+          <div id="previewGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);"><span id="imgCount">0</span> รูป</div>
+            <button onclick="document.getElementById('fileInput').click()" style="border:1.5px dashed var(--line);background:var(--bg);padding:5px 12px;font-size:12px;cursor:pointer;font-family:'IBM Plex Sans Thai',sans-serif;">+ เพิ่มรูป</button>
+            <button onclick="clearAllImages()" style="border:1.5px solid var(--bad);background:transparent;color:var(--bad);padding:5px 12px;font-size:12px;cursor:pointer;font-family:'IBM Plex Sans Thai',sans-serif;">ล้างทั้งหมด</button>
+          </div>
+        </div>
+
+        <button class="scan-btn hidden" id="scanBtn" onclick="scanAllImages()">🔍 ให้ AI อ่านตัวเลข · <span id="scanCount">0</span> รูป</button>
         <div id="scanStatus" class="scan-status hidden"></div>
 
         <div class="help-tip">
-          <strong>💡 ทิป:</strong> แคปให้เห็น <strong>ยอด followers</strong> + <strong>ยอดวิวคลิปหลายๆ อัน</strong> ในหน้าเดียว — AI จะเฉลี่ยให้อัตโนมัติ
+          <strong>💡 ทิป:</strong> แคปได้หลายรูปเลย — AI จะรวบรวมยอดวิวจากทุกรูปแล้วเฉลี่ยให้อัตโนมัติ
         </div>
 
         <div class="divider"></div>
@@ -582,43 +587,71 @@ async function fetchProfile() {
 }
 document.getElementById('tiktokUrl').addEventListener('keydown',e=>{ if(e.key==='Enter') fetchProfile(); });
 
-// ── IMAGE UPLOAD ──
-let currentImageBase64 = null;
+// ── IMAGE UPLOAD (multi) ──
+let imageList = []; // [{base64, dataUrl, name}]
+
+function updatePreviewGrid() {
+  const grid = document.getElementById('previewGrid');
+  const multi = document.getElementById('multiPreview');
+  const scanBtn = document.getElementById('scanBtn');
+  const placeholder = document.getElementById('uploadPlaceholder');
+  document.getElementById('imgCount').textContent = imageList.length;
+  document.getElementById('scanCount').textContent = imageList.length;
+
+  if(imageList.length === 0) {
+    multi.classList.add('hidden');
+    scanBtn.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+    document.getElementById('uploadZone').classList.remove('has-image');
+    return;
+  }
+  placeholder.classList.add('hidden');
+  document.getElementById('uploadZone').classList.add('has-image');
+  multi.classList.remove('hidden');
+  scanBtn.classList.remove('hidden');
+
+  grid.innerHTML = imageList.map((img,i) => `
+    <div style="position:relative;display:inline-block;">
+      <img src="${img.dataUrl}" style="width:80px;height:80px;object-fit:cover;border:1.5px solid var(--line);display:block;">
+      <button onclick="removeOneImage(${i})" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--paper);border:2px solid var(--paper);cursor:pointer;font-size:12px;font-weight:700;line-height:1;display:grid;place-items:center;">×</button>
+    </div>`).join('');
+}
 
 function handleFileSelect(e) {
-  const file = e.target.files[0];
-  if(file) loadImageFile(file);
+  const files = Array.from(e.target.files);
+  files.forEach(f => addImageFile(f));
+  e.target.value = '';
 }
-function loadImageFile(file) {
-  if(file.size > 10*1024*1024){ toast('ไฟล์ใหญ่เกิน 10MB','error'); return; }
+
+function addImageFile(file) {
+  if(file.size > 10*1024*1024){ toast('ไฟล์ใหญ่เกิน 10MB: '+file.name,'error'); return; }
   const reader = new FileReader();
   reader.onload = ev => {
-    currentImageBase64 = ev.target.result.split(',')[1];
-    document.getElementById('previewImg').src = ev.target.result;
-    document.getElementById('uploadPlaceholder').classList.add('hidden');
-    document.getElementById('uploadPreview').classList.remove('hidden');
-    document.getElementById('uploadZone').classList.add('has-image');
-    document.getElementById('scanBtn').classList.remove('hidden');
-    document.getElementById('scanStatus').classList.add('hidden');
+    imageList.push({ base64: ev.target.result.split(',')[1], dataUrl: ev.target.result, name: file.name });
+    updatePreviewGrid();
   };
   reader.readAsDataURL(file);
 }
-function removeImage(e) {
-  e.stopPropagation();
-  currentImageBase64=null;
-  document.getElementById('uploadPlaceholder').classList.remove('hidden');
-  document.getElementById('uploadPreview').classList.add('hidden');
-  document.getElementById('uploadZone').classList.remove('has-image');
-  document.getElementById('scanBtn').classList.add('hidden');
+
+function removeOneImage(idx) {
+  imageList.splice(idx, 1);
+  updatePreviewGrid();
+}
+
+function clearAllImages() {
+  imageList = [];
+  updatePreviewGrid();
   document.getElementById('scanStatus').classList.add('hidden');
-  document.getElementById('fileInput').value='';
 }
 
 // drag & drop
 const zone = document.getElementById('uploadZone');
 zone.addEventListener('dragover',e=>{ e.preventDefault(); zone.classList.add('dragover'); });
 zone.addEventListener('dragleave',()=>zone.classList.remove('dragover'));
-zone.addEventListener('drop',e=>{ e.preventDefault(); zone.classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f)loadImageFile(f); });
+zone.addEventListener('drop',e=>{
+  e.preventDefault(); zone.classList.remove('dragover');
+  Array.from(e.dataTransfer.files).forEach(f=>{ if(f.type.startsWith('image/')) addImageFile(f); });
+});
 
 // Ctrl+V paste
 document.addEventListener('paste',e=>{
@@ -626,74 +659,86 @@ document.addEventListener('paste',e=>{
   if(!items) return;
   for(const item of items){
     if(item.type.startsWith('image/')){
-      loadImageFile(item.getAsFile());
+      addImageFile(item.getAsFile());
       break;
     }
   }
 });
 
-// ── GEMINI SCAN ──
-async function scanImage() {
-  if(!currentImageBase64){ toast('อัปโหลดรูปก่อน','error'); return; }
+// ── GEMINI SCAN ALL IMAGES ──
+async function scanAllImages() {
+  if(imageList.length === 0){ toast('อัปโหลดรูปก่อน','error'); return; }
   const btn=document.getElementById('scanBtn');
   const status=document.getElementById('scanStatus');
-  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>AI กำลังอ่าน...';
+  btn.disabled=true; btn.innerHTML=`<span class="spinner"></span>AI กำลังอ่าน ${imageList.length} รูป...`;
   status.className='scan-status'; status.classList.remove('hidden');
-  status.textContent='กำลังส่งรูปให้ Gemini วิเคราะห์...';
+  status.textContent=`กำลังส่ง ${imageList.length} รูปให้ Gemini วิเคราะห์...`;
 
   const prompt = `วิเคราะห์ภาพหน้าโปรไฟล์ TikTok (หรือ Social Media) นี้
 ให้หาตัวเลขต่อไปนี้:
 1. จำนวนผู้ติดตาม (Followers) — ดูตัวเลขที่แสดงชัดเจน เช่น 1.2M, 500K, 50,000
-2. ยอดวิวของทุกคลิปที่เห็นในภาพ — รวบรวมทุกตัวเลขที่เป็นยอดวิว แล้วคำนวณค่าเฉลี่ย
+2. ยอดวิวของทุกคลิปที่เห็นในภาพ — รวบรวมทุกตัวเลขที่เป็นยอดวิว
 
 ตอบกลับเป็น JSON เท่านั้น ไม่มีข้อความอื่น:
 {
   "followers": <ตัวเลขจำนวนเต็ม หรือ null ถ้าไม่เห็น>,
-  "avg_views": <ค่าเฉลี่ยยอดวิวเป็นตัวเลขจำนวนเต็ม หรือ null ถ้าไม่เห็น>,
-  "all_views": [<รายการยอดวิวทุกคลิปที่เห็น>],
-  "note": "<สิ่งที่สังเกตเห็น เช่น เห็น 5 คลิป วิว 10K, 15K, 8K, 20K, 12K>"
+  "all_views": [<รายการยอดวิวทุกคลิปที่เห็น เป็นตัวเลขจำนวนเต็ม>],
+  "note": "<สรุปสั้นๆ ว่าเห็นอะไรบ้าง>"
 }`;
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-      {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          contents:[{parts:[
-            {text: prompt},
-            {inline_data:{mime_type:'image/jpeg',data:currentImageBase64}}
-          ]}]
-        })
-      }
-    );
-    const data = await res.json();
-    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    const clean = raw.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(clean);
+    // ส่งทีละรูป แล้วรวม all_views
+    let allFollowers = null;
+    let allViews = [];
+    let notes = [];
 
-    let filled = [];
-    if(parsed.followers) {
-      document.getElementById('followers').value = parsed.followers;
-      document.getElementById('wrap-followers').classList.add('auto-filled');
-      filled.push(`ผู้ติดตาม: ${fmtN(parsed.followers)}`);
+    for(let i=0; i<imageList.length; i++) {
+      status.textContent = `กำลังอ่านรูปที่ ${i+1}/${imageList.length}...`;
+      const img = imageList[i];
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+        {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            contents:[{parts:[
+              {text: prompt},
+              {inline_data:{mime_type:'image/jpeg',data:img.base64}}
+            ]}]
+          })
+        }
+      );
+      const data = await res.json();
+      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+      const clean = raw.replace(/```json|```/g,'').trim();
+      const parsed = JSON.parse(clean);
+      if(parsed.followers && !allFollowers) allFollowers = parsed.followers;
+      if(parsed.all_views?.length) allViews = allViews.concat(parsed.all_views);
+      if(parsed.note) notes.push(`รูป ${i+1}: ${parsed.note}`);
     }
-    if(parsed.avg_views) {
-      document.getElementById('avg-views').value = parsed.avg_views;
+
+    const avgViews = allViews.length > 0 ? Math.round(allViews.reduce((a,b)=>a+b,0)/allViews.length) : null;
+    let filled = [];
+
+    if(allFollowers) {
+      document.getElementById('followers').value = allFollowers;
+      document.getElementById('wrap-followers').classList.add('auto-filled');
+      filled.push(`ผู้ติดตาม: ${fmtN(allFollowers)}`);
+    }
+    if(avgViews) {
+      document.getElementById('avg-views').value = avgViews;
       document.getElementById('wrap-avgViews').classList.add('auto-filled');
-      const views = parsed.all_views?.length||0;
-      filled.push(`วิวเฉลี่ย: ${fmtN(parsed.avg_views)} (จาก ${views} คลิป)`);
+      filled.push(`วิวเฉลี่ย: ${fmtN(avgViews)} (จาก ${allViews.length} คลิป, ${imageList.length} รูป)`);
     }
 
     if(filled.length) {
       status.className='scan-status success';
-      status.textContent = '✓ อ่านได้: ' + filled.join(' · ') + (parsed.note?'\n'+parsed.note:'');
+      status.textContent = '✓ ' + filled.join(' · ') + '\n' + notes.join(' | ');
       calculate();
-      toast('✓ AI อ่านตัวเลขสำเร็จ','success');
+      toast('✓ AI อ่านครบ '+imageList.length+' รูป','success');
     } else {
       status.className='scan-status error';
-      status.textContent = '⚠ AI ไม่พบตัวเลขในภาพ — ลองแคปใหม่ให้เห็นชัดขึ้น\n'+(parsed.note||'');
+      status.textContent = '⚠ AI ไม่พบตัวเลข — ลองแคปใหม่ให้เห็นชัดขึ้น';
     }
   } catch(e) {
     status.className='scan-status error';
