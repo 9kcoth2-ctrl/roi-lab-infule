@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Influencer ROI Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #F4F1EA; --ink: #1A1815; --paper: #FBF9F4; --line: #1A1815;
+    --accent: #FF5C2B; --tiktok: #25F4EE; --tiktok2: #FE2C55;
+    --good: #2E7D4F; --mid: #C98A1A; --bad: #C73E1D; --muted: #6B6760;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.5; min-height: 100vh;
+    background-image: radial-gradient(circle at 1px 1px, rgba(26,24,21,0.08) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+  .container { max-width: 1440px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    background-image: radial-gradient(circle at 1px 1px, rgba(26,24,21,0.08) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+  .login-wrap { width: 100%; max-width: 440px; padding: 20px; }
+  .login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+  .logo-mark {
+    width: 48px; height: 48px; background: var(--ink); border: 2px solid var(--line);
+    display: grid; place-items: center; color: var(--paper);
+    transform: rotate(-4deg); position: relative; flex-shrink: 0;
+  }
+  .logo-mark::before { content:''; position:absolute; inset:0; background:var(--tiktok); transform:translate(-3px,-3px); z-index:-1; }
+  .logo-mark::after  { content:''; position:absolute; inset:0; background:var(--tiktok2); transform:translate(3px,3px); z-index:-2; }
+  .logo-mark svg { width:26px; height:26px; fill:currentColor; }
+  .brand-text h1 { font-family:'Fraunces',serif; font-weight:800; font-size:24px; line-height:1; letter-spacing:-0.02em; }
+  .brand-text p  { font-size:12px; color:var(--muted); margin-top:4px; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.08em; }
+  .login-card { background:var(--paper); border:2px solid var(--line); box-shadow:6px 6px 0 var(--line); padding:32px 28px; }
+  .login-card h2 { font-family:'Fraunces',serif; font-weight:600; font-size:22px; margin-bottom:6px; }
+  .login-card .sub { font-size:13px; color:var(--muted); margin-bottom:28px; font-family:'JetBrains Mono',monospace; }
+
+  label { display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:var(--ink); }
+  input[type="email"],input[type="password"],input[type="number"],input[type="text"],select,textarea {
+    width:100%; padding:10px 12px; border:1.5px solid var(--line);
+    background:var(--bg); font-family:'JetBrains Mono',monospace;
+    font-size:14px; color:var(--ink); transition:all 0.15s;
+  }
+  input:focus,select:focus,textarea:focus { outline:none; background:var(--paper); box-shadow:3px 3px 0 var(--accent); transform:translate(-1px,-1px); }
+  input[type=range]:focus { transform:none; box-shadow:none; background:none; }
+  .field-group { margin-bottom:16px; }
+
+  .btn-primary {
+    width:100%; padding:13px; background:var(--ink); color:var(--paper);
+    border:2px solid var(--line); font-family:'IBM Plex Sans Thai',sans-serif;
+    font-weight:600; font-size:15px; cursor:pointer; margin-top:8px;
+    letter-spacing:0.02em; transition:all 0.15s; box-shadow:4px 4px 0 var(--accent);
+  }
+  .btn-primary:hover { transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--accent); }
+  .btn-primary:active { transform:translate(2px,2px); box-shadow:0 0 0 var(--accent); }
+  .btn-primary:disabled { background:var(--muted); cursor:not-allowed; box-shadow:none; transform:none; }
+  .login-err { margin-top:14px; padding:10px 12px; background:rgba(199,62,29,0.08); border-left:3px solid var(--bad); font-size:13px; color:var(--bad); display:none; font-family:'JetBrains Mono',monospace; }
+
+  /* APP */
+  #app-screen { display:none; }
+  header {
+    border:2px solid var(--line); background:var(--paper); padding:20px 28px; margin-bottom:20px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:6px 6px 0 var(--line);
+  }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .header-right { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .user-info { display:flex; align-items:center; gap:8px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); }
+  .user-dot { width:7px; height:7px; border-radius:50%; background:var(--good); display:inline-block; }
+  .admin-badge { background:var(--accent); color:var(--paper); font-family:'JetBrains Mono',monospace; font-size:10px; padding:2px 8px; letter-spacing:0.1em; }
+  .btn-logout { border:1.5px solid var(--line); background:transparent; padding:7px 14px; font-family:'IBM Plex Sans Thai',sans-serif; font-weight:500; font-size:12px; cursor:pointer; color:var(--muted); transition:all 0.15s; }
+  .btn-logout:hover { background:var(--ink); color:var(--paper); }
+  .tabs { display:flex; border:2px solid var(--line); background:var(--paper); }
+  .tab-btn { border:none; background:transparent; padding:11px 20px; font-family:'IBM Plex Sans Thai',sans-serif; font-weight:600; font-size:13px; cursor:pointer; color:var(--muted); transition:all 0.15s; display:flex; align-items:center; gap:8px; }
+  .tab-btn+.tab-btn { border-left:2px solid var(--line); }
+  .tab-btn:hover { color:var(--ink); }
+  .tab-btn.active { background:var(--ink); color:var(--paper); }
+  .tab-btn .badge { background:var(--accent); color:var(--paper); font-family:'JetBrains Mono',monospace; font-size:10px; padding:2px 6px; line-height:1; }
+  .tab-btn.active .badge { background:var(--paper); color:var(--ink); }
+
+  .mode-label { display:flex; align-items:center; gap:10px; margin-bottom:14px; padding:10px 16px; background:var(--paper); border:1.5px solid var(--line); border-left:6px solid var(--accent); font-size:13px; }
+  .mode-label strong { font-weight:600; }
+  .mode-label .desc { color:var(--muted); font-size:12px; }
+  .panel { background:var(--paper); border:2px solid var(--line); box-shadow:6px 6px 0 var(--line); padding:26px; }
+  .section-label { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+  .section-label::before { content:''; width:18px; height:1px; background:var(--ink); }
+  .section-title { font-family:'Fraunces',serif; font-weight:600; font-size:20px; margin-bottom:18px; letter-spacing:-0.01em; }
+  .layout { display:grid; grid-template-columns:1fr 1.1fr; gap:20px; align-items:start; }
+  @media(max-width:1000px){ .layout{grid-template-columns:1fr;} .result-panel{position:static!important;} }
+  .divider { border-top:1.5px dashed var(--line); margin:20px 0; position:relative; }
+  .divider::after { content:'◆'; position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:var(--paper); padding:0 10px; color:var(--accent); font-size:12px; }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  .hint { font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:4px; }
+  .range-wrap { display:flex; align-items:center; gap:10px; }
+  input[type=range] { -webkit-appearance:none; flex:1; height:4px; background:rgba(26,24,21,0.2); border:none; outline:none; cursor:pointer; padding:0; box-shadow:none; transform:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; background:var(--ink); border:2px solid var(--accent); border-radius:50%; cursor:pointer; }
+  .range-val { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--accent); min-width:48px; text-align:right; }
+
+  .calc-btn { width:100%; padding:14px; background:var(--ink); color:var(--paper); border:2px solid var(--line); font-family:'IBM Plex Sans Thai',sans-serif; font-weight:600; font-size:15px; cursor:pointer; margin-top:12px; letter-spacing:0.02em; transition:all 0.15s; box-shadow:4px 4px 0 var(--accent); }
+  .calc-btn:hover { transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--accent); }
+  .calc-btn:active { transform:translate(2px,2px); box-shadow:0 0 0 var(--accent); }
+  .calc-btn.secondary { background:var(--paper); color:var(--ink); box-shadow:4px 4px 0 var(--ink); margin-top:0; }
+  .calc-btn.secondary:hover { background:var(--bg); box-shadow:6px 6px 0 var(--ink); }
+  .calc-btn:disabled { background:var(--muted); cursor:not-allowed; box-shadow:none; transform:none; }
+
+  /* URL + Profile Card */
+  .url-input-wrap { display:flex; border:1.5px solid var(--line); background:var(--bg); }
+  .url-input-wrap input { flex:1; border:none; background:transparent; padding:11px 13px; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--ink); }
+  .url-input-wrap input:focus { outline:none; transform:none; box-shadow:none; background:transparent; }
+  .url-btn { border:none; border-left:1.5px solid var(--line); background:var(--ink); color:var(--paper); padding:0 16px; font-family:'IBM Plex Sans Thai',sans-serif; font-weight:600; font-size:13px; cursor:pointer; transition:background 0.15s; white-space:nowrap; }
+  .url-btn:hover { background:var(--tiktok2); }
+  .url-btn:disabled { background:var(--muted); cursor:not-allowed; }
+
+  .profile-card { margin-top:12px; padding:14px; border:1.5px dashed var(--line); background:var(--bg); display:flex; gap:12px; align-items:center; min-height:64px; }
+  .profile-card.empty,.profile-card.loading { justify-content:center; color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; }
+  .profile-card.error { border-color:var(--bad); background:rgba(199,62,29,0.05); flex-direction:column; align-items:flex-start; gap:6px; }
+  .profile-card.error .error-title { font-weight:600; color:var(--bad); font-size:13px; }
+  .profile-card.error .error-desc { font-size:12px; color:var(--muted); }
+  .profile-avatar { width:48px; height:48px; border-radius:50%; background:var(--ink); flex-shrink:0; border:2px solid var(--line); object-fit:cover; }
+  .profile-info { flex:1; min-width:0; }
+  .profile-info .name { font-family:'Fraunces',serif; font-weight:600; font-size:16px; line-height:1.2; margin-bottom:2px; }
+  .profile-info .handle { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); }
+  .profile-info .bio { font-size:12px; color:var(--muted); margin-top:4px; line-height:1.4; }
+
+  /* Upload Zone */
+  .upload-zone { border:2px dashed var(--line); background:var(--bg); padding:22px 18px; text-align:center; cursor:pointer; transition:all 0.15s; position:relative; }
+  .upload-zone:hover { background:var(--paper); border-color:var(--tiktok2); }
+  .upload-zone.dragover { background:var(--paper); border-color:var(--tiktok2); transform:scale(0.99); }
+  .upload-zone.has-image { padding:12px; cursor:default; }
+  .upload-icon { font-family:'Fraunces',serif; font-size:30px; color:var(--accent); line-height:1; margin-bottom:8px; transform:rotate(-6deg); display:inline-block; }
+  .upload-zone p { font-size:13px; color:var(--ink); margin-bottom:4px; }
+  .upload-zone .hint { font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+  .upload-zone input[type="file"] { display:none; }
+  .preview-wrap { position:relative; display:inline-block; max-width:100%; }
+  .preview-wrap img { max-width:100%; max-height:220px; border:1.5px solid var(--line); display:block; }
+  .preview-remove { position:absolute; top:-10px; right:-10px; width:26px; height:26px; border-radius:50%; background:var(--ink); color:var(--paper); border:2px solid var(--paper); cursor:pointer; font-size:14px; font-weight:700; line-height:1; display:grid; place-items:center; }
+  .scan-btn { width:100%; margin-top:10px; padding:11px; background:var(--accent); color:var(--paper); border:2px solid var(--line); font-family:'IBM Plex Sans Thai',sans-serif; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.15s; }
+  .scan-btn:hover { background:var(--tiktok2); }
+  .scan-btn:disabled { background:var(--muted); cursor:not-allowed; }
+  .scan-status { margin-top:10px; padding:10px 12px; font-size:12px; font-family:'JetBrains Mono',monospace; background:var(--bg); border-left:3px solid var(--ink); line-height:1.5; }
+  .scan-status.success { border-color:var(--good); color:var(--good); }
+  .scan-status.error { border-color:var(--bad); color:var(--bad); }
+
+  /* auto-filled */
+  .field-wrap { position:relative; }
+  .field-wrap.auto-filled input { background:rgba(46,125,79,0.08); border-color:var(--good); }
+  .auto-badge { position:absolute; top:-6px; right:6px; background:var(--good); color:var(--paper); font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; letter-spacing:0.1em; display:none; }
+  .field-wrap.auto-filled .auto-badge { display:block; }
+
+  kbd { background:var(--ink); color:var(--paper); padding:2px 6px; font-family:'JetBrains Mono',monospace; font-size:11px; border-radius:3px; }
+  .help-tip { margin-top:10px; padding:10px 12px; background:rgba(255,92,43,0.08); border-left:3px solid var(--accent); font-size:12px; color:var(--ink); line-height:1.5; }
+
+  /* Results */
+  .result-panel { position:sticky; top:20px; }
+  .verdict { border:2px solid var(--line); padding:20px 24px; text-align:center; background:var(--paper); }
+  .verdict-badge { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .verdict-text { font-family:'Fraunces',serif; font-weight:800; font-size:48px; line-height:1; letter-spacing:-0.03em; margin-bottom:6px; }
+  .verdict-text.good { color:var(--good); } .verdict-text.mid { color:var(--mid); } .verdict-text.bad { color:var(--bad); }
+  .verdict-subtitle { font-size:14px; color:var(--muted); margin-top:4px; }
+  .score-bar-wrap { margin-top:14px; height:12px; background:var(--bg); border:1.5px solid var(--line); overflow:hidden; }
+  .score-bar { height:100%; width:0%; transition:width 0.6s cubic-bezier(0.5,0,0.2,1); }
+  .score-bar.good{background:var(--good);} .score-bar.mid{background:var(--mid);} .score-bar.bad{background:var(--bad);}
+  .score-marks { display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); margin-top:5px; }
+  .metrics { display:grid; grid-template-columns:1fr 1fr; margin-top:12px; border:2px solid var(--line); background:var(--paper); }
+  .metric { padding:14px 16px; border-right:1.5px solid var(--line); border-bottom:1.5px solid var(--line); }
+  .metric:nth-child(2n){border-right:none;} .metric:nth-last-child(-n+2){border-bottom:none;}
+  .metric-label { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .metric-value { font-family:'Fraunces',serif; font-weight:600; font-size:22px; letter-spacing:-0.02em; line-height:1.1; }
+  .metric-value .unit { font-family:'IBM Plex Sans Thai',sans-serif; font-size:12px; font-weight:400; color:var(--muted); margin-left:4px; }
+  .metric-bench { font-size:11px; color:var(--muted); margin-top:4px; font-family:'JetBrains Mono',monospace; }
+  .metric-bench.good{color:var(--good);} .metric-bench.bad{color:var(--bad);} .metric-bench.mid{color:var(--mid);}
+  .breakdown { margin-top:12px; border:2px solid var(--line); background:var(--paper); padding:18px 20px; }
+  .breakdown h3 { font-family:'Fraunces',serif; font-weight:600; font-size:16px; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  .breakdown h3::before { content:'※'; color:var(--accent); }
+  .reason-list { list-style:none; }
+  .reason-list li { padding:8px 0; border-bottom:1px dashed rgba(26,24,21,0.15); display:flex; align-items:flex-start; gap:10px; font-size:13px; }
+  .reason-list li:last-child { border-bottom:none; }
+  .reason-icon { flex-shrink:0; width:18px; height:18px; display:grid; place-items:center; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px; border:1.5px solid var(--line); margin-top:1px; }
+  .reason-icon.pos{background:var(--good);color:var(--paper);} .reason-icon.neu{background:var(--mid);color:var(--paper);} .reason-icon.neg{background:var(--bad);color:var(--paper);}
+  .empty-state { border:2px dashed var(--line); padding:50px 32px; text-align:center; background:var(--paper); }
+  .empty-state .icon { font-family:'Fraunces',serif; font-size:56px; color:var(--accent); line-height:1; margin-bottom:14px; display:inline-block; transform:rotate(-8deg); }
+  .empty-state h3 { font-family:'Fraunces',serif; font-weight:600; font-size:20px; margin-bottom:6px; }
+  .empty-state p { color:var(--muted); font-size:13px; }
+  .copy-bridge { margin-top:12px; padding:14px 16px; border:1.5px dashed var(--line); background:var(--paper); }
+  .copy-bridge h4 { font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin-bottom:8px; }
+  .copy-text { font-family:'JetBrains Mono',monospace; font-size:11px; background:var(--bg); border:1px solid var(--line); padding:10px 12px; white-space:pre-wrap; color:var(--muted); line-height:1.6; min-height:60px; }
+  .footnote { margin-top:20px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-align:center; letter-spacing:0.05em; line-height:1.6; }
+
+  /* Admin */
+  .admin-layout { display:grid; grid-template-columns:380px 1fr; gap:20px; align-items:start; }
+  @media(max-width:900px){ .admin-layout{grid-template-columns:1fr;} }
+  .user-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .user-table th { background:var(--ink); color:var(--paper); padding:10px 12px; text-align:left; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; border-right:1px solid rgba(251,249,244,0.15); }
+  .user-table th:last-child{border-right:none;}
+  .user-table td { padding:10px 12px; border-bottom:1px solid rgba(26,24,21,0.1); vertical-align:middle; }
+  .user-table tr:last-child td{border-bottom:none;}
+  .user-table tr:hover td{background:rgba(255,92,43,0.04);}
+  .role-badge { font-family:'JetBrains Mono',monospace; font-size:10px; padding:2px 8px; letter-spacing:0.08em; border:1.5px solid var(--line); display:inline-block; }
+  .role-badge.admin{background:var(--ink);color:var(--paper);} .role-badge.user{background:var(--paper);color:var(--muted);}
+  .del-btn { background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:4px 8px; transition:color 0.15s; }
+  .del-btn:hover{color:var(--bad);}
+  .table-wrap { overflow-x:auto; border:2px solid var(--line); background:var(--paper); }
+  .table-empty { padding:40px; text-align:center; color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; }
+  .tier-pills { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .tier-pill { border:1.5px solid var(--line); background:var(--bg); padding:5px 12px; font-family:'JetBrains Mono',monospace; font-size:11px; cursor:pointer; transition:all 0.12s; letter-spacing:0.04em; }
+  .tier-pill:hover{background:var(--paper);}
+  .tier-pill.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231A1815' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
+  .hidden{display:none!important;}
+  @keyframes pop{0%{transform:scale(0.95);opacity:0;}60%{transform:scale(1.02);}100%{transform:scale(1);opacity:1;}}
+  .animate-in{animation:pop 0.4s cubic-bezier(0.2,0.8,0.3,1) forwards;}
+  .spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--muted);border-top-color:var(--ink);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:6px;vertical-align:middle;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .toast{position:fixed;bottom:24px;right:24px;padding:14px 20px;background:var(--ink);color:var(--paper);border:2px solid var(--line);box-shadow:4px 4px 0 var(--accent);font-size:13px;font-weight:500;z-index:9999;max-width:380px;opacity:0;transform:translateY(20px);transition:all 0.3s;}
+  .toast.show{opacity:1;transform:translateY(0);}
+  .toast.success{border-color:var(--good);box-shadow:4px 4px 0 var(--good);}
+  .toast.error{border-color:var(--bad);box-shadow:4px 4px 0 var(--bad);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.1z"/></svg></div>
+      <div class="brand-text"><h1>Influencer ROI Lab</h1><p>เข้าถึงได้เฉพาะทีมงาน</p></div>
+    </div>
+    <div class="login-card">
+      <h2>เข้าสู่ระบบ</h2>
+      <div class="sub">// ติดต่อ Admin เพื่อขอบัญชี</div>
+      <div class="field-group"><label>Email</label><input type="email" id="login-email" placeholder="your@email.com"></div>
+      <div class="field-group"><label>Password</label><input type="password" id="login-password" placeholder="••••••••"></div>
+      <button class="btn-primary" id="login-btn" onclick="doLogin()">เข้าสู่ระบบ →</button>
+      <div class="login-err" id="login-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+<div class="container">
+  <header>
+    <div class="brand">
+      <div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.1z"/></svg></div>
+      <div class="brand-text"><h1>Influencer ROI Lab</h1><p>ประเมินก่อนจ้าง · ไม่บันทึกข้อมูล</p></div>
+    </div>
+    <div class="header-right">
+      <div class="user-info"><span class="user-dot"></span><span id="user-email-display">—</span></div>
+      <span class="admin-badge hidden" id="admin-badge">ADMIN</span>
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-calc-btn" onclick="switchTab('calc')">📊 คำนวณ <span class="badge">ROI</span></button>
+        <button class="tab-btn hidden" id="tab-admin-btn" onclick="switchTab('admin')">⚙️ จัดการ User <span class="badge">ADMIN</span></button>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">ออกจากระบบ</button>
+    </div>
+  </header>
+
+  <!-- TAB: CALCULATOR -->
+  <div id="tab-calc">
+    <div class="mode-label">
+      <span>🎯</span>
+      <div><strong>โหมดประเมินก่อนจ้าง</strong><div class="desc">วางลิงก์ TikTok → ดึงชื่อ+รูป → แคปหน้าจอ → AI อ่านตัวเลขให้ → คำนวณ ROI</div></div>
+    </div>
+
+    <div class="layout">
+      <section class="panel">
+
+        <!-- STEP 1: URL -->
+        <div class="section-label">ขั้นตอน 01</div>
+        <h2 class="section-title">วางลิงก์โปรไฟล์ TikTok</h2>
+        <div class="url-input-wrap">
+          <input type="text" id="tiktokUrl" placeholder="https://www.tiktok.com/@username" autocomplete="off">
+          <button class="url-btn" id="fetchBtn" onclick="fetchProfile()">ดึงข้อมูล</button>
+        </div>
+        <div id="profileCard" class="profile-card empty">ยังไม่ได้ดึงข้อมูล — วาง URL แล้วกดปุ่ม</div>
+
+        <div class="divider"></div>
+
+        <!-- STEP 2: SCREENSHOT -->
+        <div class="section-label">ขั้นตอน 02</div>
+        <h2 class="section-title">แคปหน้าโปรไฟล์ — AI อ่านให้</h2>
+
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+          <div id="uploadPlaceholder">
+            <div class="upload-icon">⤓</div>
+            <p><strong>คลิกเลือก</strong> · ลาก · หรือ <kbd>Ctrl+V</kbd></p>
+            <div class="hint">PNG · JPG · max 10MB · แคปให้เห็น followers + วิวคลิปหลายๆ อัน</div>
+          </div>
+          <div id="uploadPreview" class="preview-wrap hidden">
+            <img id="previewImg" alt="preview">
+            <button class="preview-remove" onclick="removeImage(event)">×</button>
+          </div>
+          <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+        </div>
+
+        <button class="scan-btn hidden" id="scanBtn" onclick="scanImage()">🔍 ให้ AI อ่านตัวเลข (Gemini)</button>
+        <div id="scanStatus" class="scan-status hidden"></div>
+
+        <div class="help-tip">
+          <strong>💡 ทิป:</strong> แคปให้เห็น <strong>ยอด followers</strong> + <strong>ยอดวิวคลิปหลายๆ อัน</strong> ในหน้าเดียว — AI จะเฉลี่ยให้อัตโนมัติ
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- STEP 3: NUMBERS -->
+        <div class="section-label">ขั้นตอน 03</div>
+        <h2 class="section-title">ตัวเลข (แก้ไขได้)</h2>
+
+        <div class="field-group">
+          <label>ระดับ Influencer</label>
+          <div class="tier-pills">
+            <button class="tier-pill" onclick="applyTier('nano',this)">Nano<br><span style="font-size:9px;opacity:.6">1K–10K</span></button>
+            <button class="tier-pill active" onclick="applyTier('micro',this)">Micro<br><span style="font-size:9px;opacity:.6">10K–100K</span></button>
+            <button class="tier-pill" onclick="applyTier('mid',this)">Mid-tier<br><span style="font-size:9px;opacity:.6">100K–500K</span></button>
+            <button class="tier-pill" onclick="applyTier('macro',this)">Macro<br><span style="font-size:9px;opacity:.6">500K–1M</span></button>
+            <button class="tier-pill" onclick="applyTier('mega',this)">Mega<br><span style="font-size:9px;opacity:.6">1M+</span></button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-wrap" id="wrap-followers">
+            <span class="auto-badge">AUTO</span>
+            <label>ผู้ติดตาม</label>
+            <input type="number" id="followers" value="50000" min="0" oninput="calculate()">
+          </div>
+          <div class="field-wrap" id="wrap-avgViews">
+            <span class="auto-badge">AUTO</span>
+            <label>ยอดวิวเฉลี่ย/คลิป</label>
+            <input type="number" id="avg-views" value="15000" min="0" oninput="calculate()">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label>Engagement เฉลี่ย</label>
+            <input type="number" id="avg-engage" value="600" min="0" oninput="calculate()">
+            <div class="hint">like + comment + share</div>
+          </div>
+          <div>
+            <label>ราคาที่อินฟลูเสนอ (฿)</label>
+            <input type="number" id="price" value="8000" min="0" oninput="calculate()">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>Engagement Rate (%)</label>
+          <div class="range-wrap">
+            <input type="range" id="eng-rate" min="0.1" max="20" step="0.1" value="4" oninput="syncEng()">
+            <div class="range-val" id="eng-rate-val">4.0%</div>
+          </div>
+          <div class="hint">TikTok ~4–8% · IG ~2–4% · YouTube ~2–5%</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- STEP 4: CAMPAIGN -->
+        <div class="section-label">ขั้นตอน 04</div>
+        <h2 class="section-title">เป้าหมายแคมเปญ</h2>
+
+        <div class="field-group">
+          <label>วัตถุประสงค์หลัก</label>
+          <select id="objective" onchange="calculate()">
+            <option value="awareness">Brand Awareness (Reach / Views)</option>
+            <option value="engagement">Engagement (Like / Comment / Share)</option>
+            <option value="conversion" selected>Conversion / Sales</option>
+            <option value="traffic">Traffic to Website / App</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label>Conversion คาดหวัง (%)</label>
+            <div class="range-wrap">
+              <input type="range" id="conv-rate" min="0.1" max="15" step="0.1" value="1.5" oninput="syncConv()">
+              <div class="range-val" id="conv-rate-val">1.5%</div>
+            </div>
+          </div>
+          <div>
+            <label>มูลค่าออเดอร์เฉลี่ย (AOV)</label>
+            <input type="number" id="aov" value="490" min="0" oninput="calculate()">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label>Margin สินค้า (%)</label>
+            <input type="number" id="margin" value="35" min="0" max="100" oninput="calculate()">
+          </div>
+          <div>
+            <label>จำนวนคอนเทนต์</label>
+            <input type="number" id="content-count" value="1" min="1" oninput="calculate()">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label>CPM เป้าหมาย (฿/1K views)</label>
+            <input type="number" id="target-cpm" value="80" min="0" oninput="calculate()">
+            <div class="hint">ตลาดไทย ~30–120 ฿</div>
+          </div>
+          <div>
+            <label>งบแคมเปญ (ไม่บังคับ)</label>
+            <input type="number" id="budget" placeholder="—" oninput="calculate()">
+          </div>
+        </div>
+
+        <button class="calc-btn" onclick="calculate()">คำนวณความคุ้มค่า →</button>
+      </section>
+
+      <!-- RESULTS -->
+      <section class="result-panel">
+        <div id="empty-state" class="empty-state">
+          <div class="icon">?</div>
+          <h3>ยังไม่มีผลลัพธ์</h3>
+          <p>กรอกข้อมูลทางซ้ายแล้วกด "คำนวณ"</p>
+        </div>
+
+        <div id="results" class="hidden">
+          <div class="verdict animate-in">
+            <div class="verdict-badge">คำตัดสิน</div>
+            <div id="verdict-text" class="verdict-text good">คุ้มค่า</div>
+            <div id="verdict-sub" class="verdict-subtitle">—</div>
+            <div class="score-bar-wrap"><div id="score-bar" class="score-bar good"></div></div>
+            <div class="score-marks"><span>0</span><span>ไม่คุ้ม</span><span>พอใช้</span><span>คุ้ม</span><span>100</span></div>
+          </div>
+
+          <div class="metrics animate-in" style="animation-delay:.1s">
+            <div class="metric"><div class="metric-label">Engagement Rate</div><div class="metric-value"><span id="m-er">—</span><span class="unit">%</span></div><div id="m-er-bench" class="metric-bench">—</div></div>
+            <div class="metric"><div class="metric-label">CPM จริง</div><div class="metric-value">฿<span id="m-cpm">—</span></div><div id="m-cpm-bench" class="metric-bench">—</div></div>
+            <div class="metric"><div class="metric-label">รายได้คาด</div><div class="metric-value">฿<span id="m-rev">—</span></div><div id="m-rev-bench" class="metric-bench">—</div></div>
+            <div class="metric"><div class="metric-label">ROI</div><div class="metric-value"><span id="m-roi">—</span><span class="unit">%</span></div><div id="m-roi-bench" class="metric-bench">—</div></div>
+            <div class="metric"><div class="metric-label">Est. Conversions</div><div class="metric-value"><span id="m-conv">—</span><span class="unit">ออเดอร์</span></div><div id="m-conv-bench" class="metric-bench">—</div></div>
+            <div class="metric"><div class="metric-label">CPE</div><div class="metric-value">฿<span id="m-cpe">—</span></div><div class="metric-bench">ต่อ 1 engagement</div></div>
+            <div class="metric"><div class="metric-label">Break-even Views</div><div class="metric-value"><span id="m-be">—</span></div><div id="m-be-bench" class="metric-bench">—</div></div>
+            <div class="metric"><div class="metric-label">% งบที่ใช้</div><div class="metric-value"><span id="m-alloc">—</span><span class="unit">%</span></div><div class="metric-bench">ของงบแคมเปญ</div></div>
+          </div>
+
+          <div class="breakdown animate-in" style="animation-delay:.2s">
+            <h3>เหตุผลประกอบ</h3>
+            <ul id="reason-list" class="reason-list"></ul>
+          </div>
+
+          <div class="copy-bridge animate-in" style="animation-delay:.3s">
+            <h4>📋 สรุปผลแบบ Copy ได้</h4>
+            <div class="copy-text" id="copy-text">—</div>
+            <button class="calc-btn secondary" style="margin-top:10px" onclick="copyResult()">→ Copy สรุปผล</button>
+          </div>
+        </div>
+
+        <div class="footnote">* เป็นการประมาณการ — ผลจริงขึ้นกับคุณภาพคอนเทนต์<br>* ข้อมูลไม่ถูกบันทึก รีเฟรชแล้วรีเซ็ต</div>
+      </section>
+    </div>
+  </div>
+
+  <!-- TAB: ADMIN -->
+  <div id="tab-admin" class="hidden">
+    <div class="mode-label"><span>⚙️</span><div><strong>จัดการ User — Admin Only</strong><div class="desc">เพิ่ม / ลบ user ที่มีสิทธิ์เข้าใช้งาน</div></div></div>
+    <div class="admin-layout">
+      <div class="panel">
+        <div class="section-label">เพิ่ม User ใหม่</div>
+        <h2 class="section-title">สร้างบัญชี</h2>
+        <div class="field-group"><label>Email</label><input type="email" id="new-email" placeholder="employee@email.com"></div>
+        <div class="field-group"><label>Password เริ่มต้น</label><input type="text" id="new-password" placeholder="ตั้งรหัสให้เขา เช่น roi2024"><div class="hint">แจ้งรหัสให้พนักงานเอง</div></div>
+        <div class="field-group"><label>Role</label><select id="new-role"><option value="user">User — ใช้งานคำนวณได้</option><option value="admin">Admin — จัดการ user ได้ด้วย</option></select></div>
+        <button class="calc-btn" id="add-user-btn" onclick="addUser()">+ เพิ่ม User →</button>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-family:'Fraunces',serif;font-weight:600;font-size:20px;">รายชื่อ User ทั้งหมด</div>
+          <button class="calc-btn secondary" style="width:auto;padding:8px 16px" onclick="loadUsers()">↺ รีเฟรช</button>
+        </div>
+        <div class="table-wrap">
+          <div id="user-table-loading" class="table-empty"><span class="spinner"></span>กำลังโหลด...</div>
+          <table class="user-table hidden" id="user-table"><thead><tr><th>Email</th><th>Role</th><th>สร้างเมื่อ</th><th></th></tr></thead><tbody id="user-tbody"></tbody></table>
+          <div id="user-table-empty" class="table-empty hidden">ยังไม่มี user</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL      = 'https://srcupxkqfxbcsdnpenfh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyY3VweGtxZnhiY3NkbnBlbmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MzYyNTcsImV4cCI6MjA5NTAxMjI1N30.nUGVWMtArzJiMpQRViogNiOSwO302FsOzsZAgwjjGV4';
+const GEMINI_KEY        = 'AIzaSyDvRlP3SiHC0-E37wxB0ck1L4p_gWVSHlg';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null, currentRole = 'user';
+
+// ── AUTH ──
+async function initAuth() {
+  const { data:{session} } = await sb.auth.getSession();
+  if (session) await onLogin(session.user);
+  sb.auth.onAuthStateChange(async(_,session)=>{ if(session) await onLogin(session.user); else showLogin(); });
+}
+async function onLogin(user) {
+  currentUser = user;
+  const { data } = await sb.from('profiles').select('role').eq('id',user.id).single();
+  currentRole = data?.role||'user';
+  document.getElementById('user-email-display').textContent = user.email;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  if (currentRole==='admin') {
+    document.getElementById('admin-badge').classList.remove('hidden');
+    document.getElementById('tab-admin-btn').classList.remove('hidden');
+  }
+  calculate();
+}
+function showLogin() {
+  currentUser=null; currentRole='user';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app-screen').style.display='none';
+}
+async function doLogin() {
+  const email=document.getElementById('login-email').value.trim();
+  const password=document.getElementById('login-password').value;
+  const btn=document.getElementById('login-btn');
+  const errEl=document.getElementById('login-err');
+  errEl.style.display='none'; btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>กำลังเข้าสู่ระบบ...';
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  btn.disabled=false; btn.textContent='เข้าสู่ระบบ →';
+  if(error){errEl.textContent='// อีเมลหรือรหัสผ่านไม่ถูกต้อง';errEl.style.display='block';}
+}
+async function doLogout(){ await sb.auth.signOut(); }
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login-screen').style.display!=='none')doLogin();});
+
+// ── TABS ──
+function switchTab(tab) {
+  document.getElementById('tab-calc').classList.toggle('hidden',tab!=='calc');
+  document.getElementById('tab-admin').classList.toggle('hidden',tab!=='admin');
+  document.getElementById('tab-calc-btn').classList.toggle('active',tab==='calc');
+  document.getElementById('tab-admin-btn').classList.toggle('active',tab==='admin');
+  if(tab==='admin') loadUsers();
+}
+
+// ── FETCH TIKTOK PROFILE (oEmbed) ──
+async function fetchProfile() {
+  const url = document.getElementById('tiktokUrl').value.trim();
+  if(!url){ toast('ใส่ URL ก่อน','error'); return; }
+  const btn = document.getElementById('fetchBtn');
+  const card = document.getElementById('profileCard');
+  btn.disabled=true; btn.textContent='กำลังดึง...';
+  card.className='profile-card loading';
+  card.innerHTML='<span class="spinner"></span>กำลังดึงข้อมูล...';
+
+  try {
+    const apiUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+    const res = await fetch(apiUrl);
+    if(!res.ok) throw new Error('ไม่พบช่อง หรือ URL ไม่ถูกต้อง');
+    const data = await res.json();
+
+    card.className='profile-card';
+    card.innerHTML=`
+      <img class="profile-avatar" src="${data.thumbnail_url||''}" onerror="this.style.background='var(--muted)'" alt="">
+      <div class="profile-info">
+        <div class="name">${data.author_name||'—'}</div>
+        <div class="handle">@${data.author_url?.split('@')[1]||url.split('@')[1]||'—'}</div>
+        ${data.title?`<div class="bio">${data.title.substring(0,80)}${data.title.length>80?'...':''}</div>`:''}
+      </div>`;
+    toast('✓ ดึงข้อมูลสำเร็จ','success');
+  } catch(e) {
+    card.className='profile-card error';
+    card.innerHTML=`<div class="error-title">ดึงข้อมูลไม่ได้</div><div class="error-desc">${e.message} — ลองแคปหน้าจอมาแทนได้เลย</div>`;
+  }
+  btn.disabled=false; btn.textContent='ดึงข้อมูล';
+}
+document.getElementById('tiktokUrl').addEventListener('keydown',e=>{ if(e.key==='Enter') fetchProfile(); });
+
+// ── IMAGE UPLOAD ──
+let currentImageBase64 = null;
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if(file) loadImageFile(file);
+}
+function loadImageFile(file) {
+  if(file.size > 10*1024*1024){ toast('ไฟล์ใหญ่เกิน 10MB','error'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    currentImageBase64 = ev.target.result.split(',')[1];
+    document.getElementById('previewImg').src = ev.target.result;
+    document.getElementById('uploadPlaceholder').classList.add('hidden');
+    document.getElementById('uploadPreview').classList.remove('hidden');
+    document.getElementById('uploadZone').classList.add('has-image');
+    document.getElementById('scanBtn').classList.remove('hidden');
+    document.getElementById('scanStatus').classList.add('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+function removeImage(e) {
+  e.stopPropagation();
+  currentImageBase64=null;
+  document.getElementById('uploadPlaceholder').classList.remove('hidden');
+  document.getElementById('uploadPreview').classList.add('hidden');
+  document.getElementById('uploadZone').classList.remove('has-image');
+  document.getElementById('scanBtn').classList.add('hidden');
+  document.getElementById('scanStatus').classList.add('hidden');
+  document.getElementById('fileInput').value='';
+}
+
+// drag & drop
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover',e=>{ e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave',()=>zone.classList.remove('dragover'));
+zone.addEventListener('drop',e=>{ e.preventDefault(); zone.classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f)loadImageFile(f); });
+
+// Ctrl+V paste
+document.addEventListener('paste',e=>{
+  const items=e.clipboardData?.items;
+  if(!items) return;
+  for(const item of items){
+    if(item.type.startsWith('image/')){
+      loadImageFile(item.getAsFile());
+      break;
+    }
+  }
+});
+
+// ── GEMINI SCAN ──
+async function scanImage() {
+  if(!currentImageBase64){ toast('อัปโหลดรูปก่อน','error'); return; }
+  const btn=document.getElementById('scanBtn');
+  const status=document.getElementById('scanStatus');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>AI กำลังอ่าน...';
+  status.className='scan-status'; status.classList.remove('hidden');
+  status.textContent='กำลังส่งรูปให้ Gemini วิเคราะห์...';
+
+  const prompt = `วิเคราะห์ภาพหน้าโปรไฟล์ TikTok (หรือ Social Media) นี้
+ให้หาตัวเลขต่อไปนี้:
+1. จำนวนผู้ติดตาม (Followers) — ดูตัวเลขที่แสดงชัดเจน เช่น 1.2M, 500K, 50,000
+2. ยอดวิวของทุกคลิปที่เห็นในภาพ — รวบรวมทุกตัวเลขที่เป็นยอดวิว แล้วคำนวณค่าเฉลี่ย
+
+ตอบกลับเป็น JSON เท่านั้น ไม่มีข้อความอื่น:
+{
+  "followers": <ตัวเลขจำนวนเต็ม หรือ null ถ้าไม่เห็น>,
+  "avg_views": <ค่าเฉลี่ยยอดวิวเป็นตัวเลขจำนวนเต็ม หรือ null ถ้าไม่เห็น>,
+  "all_views": [<รายการยอดวิวทุกคลิปที่เห็น>],
+  "note": "<สิ่งที่สังเกตเห็น เช่น เห็น 5 คลิป วิว 10K, 15K, 8K, 20K, 12K>"
+}`;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          contents:[{parts:[
+            {text: prompt},
+            {inline_data:{mime_type:'image/jpeg',data:currentImageBase64}}
+          ]}]
+        })
+      }
+    );
+    const data = await res.json();
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+
+    let filled = [];
+    if(parsed.followers) {
+      document.getElementById('followers').value = parsed.followers;
+      document.getElementById('wrap-followers').classList.add('auto-filled');
+      filled.push(`ผู้ติดตาม: ${fmtN(parsed.followers)}`);
+    }
+    if(parsed.avg_views) {
+      document.getElementById('avg-views').value = parsed.avg_views;
+      document.getElementById('wrap-avgViews').classList.add('auto-filled');
+      const views = parsed.all_views?.length||0;
+      filled.push(`วิวเฉลี่ย: ${fmtN(parsed.avg_views)} (จาก ${views} คลิป)`);
+    }
+
+    if(filled.length) {
+      status.className='scan-status success';
+      status.textContent = '✓ อ่านได้: ' + filled.join(' · ') + (parsed.note?'\n'+parsed.note:'');
+      calculate();
+      toast('✓ AI อ่านตัวเลขสำเร็จ','success');
+    } else {
+      status.className='scan-status error';
+      status.textContent = '⚠ AI ไม่พบตัวเลขในภาพ — ลองแคปใหม่ให้เห็นชัดขึ้น\n'+(parsed.note||'');
+    }
+  } catch(e) {
+    status.className='scan-status error';
+    status.textContent = '✗ เกิดข้อผิดพลาด: '+e.message;
+    toast('✗ AI อ่านไม่ได้','error');
+  }
+  btn.disabled=false; btn.textContent='🔍 ให้ AI อ่านตัวเลข (Gemini)';
+}
+
+// ── ADMIN USER MANAGEMENT ──
+async function addUser() {
+  const email=document.getElementById('new-email').value.trim();
+  const password=document.getElementById('new-password').value;
+  const role=document.getElementById('new-role').value;
+  const btn=document.getElementById('add-user-btn');
+  if(!email||!password){toast('กรอก Email และ Password ด้วย','error');return;}
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>กำลังสร้าง...';
+  const {data,error}=await sb.auth.signUp({email,password,options:{data:{role}}});
+  if(error){toast('✗ '+(error.message||'เกิดข้อผิดพลาด'),'error');btn.disabled=false;btn.textContent='+ เพิ่ม User →';return;}
+  if(role==='admin'&&data?.user?.id){
+    await sb.from('profiles').update({role:'admin'}).eq('id',data.user.id);
+  }
+  toast('✓ สร้าง user สำเร็จ — '+email,'success');
+  document.getElementById('new-email').value='';
+  document.getElementById('new-password').value='';
+  btn.disabled=false; btn.textContent='+ เพิ่ม User →';
+  loadUsers();
+}
+async function loadUsers() {
+  document.getElementById('user-table-loading').classList.remove('hidden');
+  document.getElementById('user-table').classList.add('hidden');
+  document.getElementById('user-table-empty').classList.add('hidden');
+  const {data,error}=await sb.from('profiles').select('*').order('created_at',{ascending:false});
+  document.getElementById('user-table-loading').classList.add('hidden');
+  if(error||!data||data.length===0){document.getElementById('user-table-empty').classList.remove('hidden');return;}
+  document.getElementById('user-tbody').innerHTML=data.map(u=>`
+    <tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${u.email||'—'}</td>
+      <td><span class="role-badge ${u.role}">${u.role==='admin'?'ADMIN':'USER'}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">${u.created_at?new Date(u.created_at).toLocaleDateString('th-TH'):'—'}</td>
+      <td>${u.id!==currentUser?.id?`<button class="del-btn" onclick="deleteUser('${u.id}','${u.email}')">×</button>`:'<span style="font-size:11px;color:var(--muted);padding:0 8px">ตัวเอง</span>'}</td>
+    </tr>`).join('');
+  document.getElementById('user-table').classList.remove('hidden');
+}
+async function deleteUser(id,email) {
+  if(!confirm(`ลบ ${email} ออกจากระบบ?`))return;
+  const {error}=await sb.from('profiles').delete().eq('id',id);
+  if(error){toast('✗ ลบไม่ได้: '+error.message,'error');return;}
+  toast('✓ ลบ '+email+' แล้ว','success'); loadUsers();
+}
+
+// ── TIER DEFAULTS ──
+const TIERS={
+  nano: {followers:5000,views:2000,eng:7.0,engage:140,price:2000},
+  micro:{followers:50000,views:15000,eng:5.0,engage:750,price:8000},
+  mid:  {followers:250000,views:50000,eng:3.5,engage:1750,price:25000},
+  macro:{followers:750000,views:120000,eng:2.5,engage:3000,price:70000},
+  mega: {followers:2000000,views:400000,eng:1.8,engage:7200,price:250000},
+};
+function applyTier(tier,el){
+  document.querySelectorAll('.tier-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  const d=TIERS[tier];
+  document.getElementById('followers').value=d.followers;
+  document.getElementById('avg-views').value=d.views;
+  document.getElementById('avg-engage').value=d.engage;
+  document.getElementById('price').value=d.price;
+  document.getElementById('eng-rate').value=d.eng;
+  document.getElementById('eng-rate-val').textContent=d.eng.toFixed(1)+'%';
+  document.getElementById('wrap-followers').classList.remove('auto-filled');
+  document.getElementById('wrap-avgViews').classList.remove('auto-filled');
+  calculate();
+}
+function syncEng(){const v=parseFloat(document.getElementById('eng-rate').value);document.getElementById('eng-rate-val').textContent=v.toFixed(1)+'%';calculate();}
+function syncConv(){const v=parseFloat(document.getElementById('conv-rate').value);document.getElementById('conv-rate-val').textContent=v.toFixed(1)+'%';calculate();}
+
+// ── CALCULATE ──
+function fmt(n){if(n===null||isNaN(n))return'—';if(Math.abs(n)>=1000000)return(n/1000000).toFixed(2)+'M';if(Math.abs(n)>=1000)return(n/1000).toFixed(1)+'K';return n.toFixed(0);}
+function fmtN(n,d=0){if(n===null||isNaN(n))return'—';return n.toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});}
+
+function calculate(){
+  const followers=parseFloat(document.getElementById('followers').value)||0;
+  const avgViews=parseFloat(document.getElementById('avg-views').value)||0;
+  const avgEngage=parseFloat(document.getElementById('avg-engage').value)||0;
+  const price=parseFloat(document.getElementById('price').value)||0;
+  const engRate=parseFloat(document.getElementById('eng-rate').value)||0;
+  const convRate=parseFloat(document.getElementById('conv-rate').value)||1.5;
+  const aov=parseFloat(document.getElementById('aov').value)||0;
+  const margin=parseFloat(document.getElementById('margin').value)||35;
+  const count=parseInt(document.getElementById('content-count').value)||1;
+  const targetCpm=parseFloat(document.getElementById('target-cpm').value)||80;
+  const budget=parseFloat(document.getElementById('budget').value)||0;
+
+  if(!price&&!avgViews){document.getElementById('empty-state').classList.remove('hidden');document.getElementById('results').classList.add('hidden');return;}
+
+  const totalFee=price*count;
+  const totalViews=avgViews*count;
+  const totalEng=avgEngage*count;
+  const erPct=followers>0?(avgEngage/followers)*100:engRate;
+  const conversions=Math.round(totalViews*(convRate/100));
+  const revenue=conversions*aov;
+  const grossProfit=revenue*(margin/100);
+  const roi=totalFee>0?((grossProfit-totalFee)/totalFee)*100:null;
+  const cpm=totalViews>0?(totalFee/totalViews)*1000:null;
+  const cpe=totalEng>0?totalFee/totalEng:null;
+  const breakeven=aov>0&&convRate>0?Math.ceil((totalFee/(aov*(margin/100)))/(convRate/100)):null;
+  const allocPct=budget>0?(totalFee/budget)*100:null;
+
+  let score=50; const reasons=[];const EB=3.5;
+  if(erPct>=EB*1.5){score+=12;reasons.push(['pos',`ER ${erPct.toFixed(1)}% — สูงกว่าเกณฑ์มาก`]);}
+  else if(erPct>=EB){score+=6;reasons.push(['pos',`ER ${erPct.toFixed(1)}% — สูงกว่าเกณฑ์เฉลี่ย`]);}
+  else if(erPct<EB*0.5){score-=12;reasons.push(['neg',`ER ${erPct.toFixed(1)}% — ต่ำกว่าเกณฑ์มาก`]);}
+  else{reasons.push(['neu',`ER ${erPct.toFixed(1)}% — อยู่ในช่วงปกติ`]);}
+  if(cpm!==null){const d=((cpm-targetCpm)/targetCpm)*100;
+    if(cpm<=targetCpm*0.7){score+=15;reasons.push(['pos',`CPM ฿${cpm.toFixed(0)} — ถูกกว่าเป้า ${Math.abs(d).toFixed(0)}%`]);}
+    else if(cpm<=targetCpm){score+=7;reasons.push(['pos',`CPM ฿${cpm.toFixed(0)} — ถูกกว่าเป้า`]);}
+    else if(cpm<=targetCpm*1.3){score-=5;reasons.push(['neu',`CPM ฿${cpm.toFixed(0)} — แพงกว่าเป้าเล็กน้อย`]);}
+    else{score-=15;reasons.push(['neg',`CPM ฿${cpm.toFixed(0)} — แพงกว่าเป้า ${d.toFixed(0)}% ควรต่อรอง`]);}}
+  if(roi!==null){
+    if(roi>=100){score+=20;reasons.push(['pos',`ROI +${roi.toFixed(0)}% — กำไรสูงมาก`]);}
+    else if(roi>=30){score+=10;reasons.push(['pos',`ROI +${roi.toFixed(0)}% — มีกำไรที่ดี`]);}
+    else if(roi>=0){score+=2;reasons.push(['neu',`ROI +${roi.toFixed(0)}% — กำไรเล็กน้อย`]);}
+    else{score-=20;reasons.push(['neg',`ROI ${roi.toFixed(0)}% — ขาดทุน ควรต่อรอง`]);}}
+  else if(!aov){reasons.push(['neu','ไม่ได้ระบุ AOV — ไม่สามารถคำนวน ROI ได้']);}
+  if(allocPct!==null){
+    if(allocPct>50)reasons.push(['neg',`ค่าจ้าง ${allocPct.toFixed(0)}% ของงบ — สัดส่วนสูงมาก`]);
+    else if(allocPct>30)reasons.push(['neu',`ค่าจ้าง ${allocPct.toFixed(0)}% ของงบ — พอรับได้`]);
+    else reasons.push(['pos',`ค่าจ้าง ${allocPct.toFixed(0)}% ของงบ — เหมาะสม`]);}
+
+  score=Math.min(100,Math.max(0,score));
+  let vClass,vText,vSub;
+  if(score>=65){vClass='good';vText='คุ้มค่า';vSub='ตัวเลขบ่งชี้ว่าน่าลงทุน';}
+  else if(score>=40){vClass='mid';vText='พอได้';vSub='มีจุดที่ควรพิจารณาเพิ่มเติม';}
+  else{vClass='bad';vText='ไม่คุ้ม';vSub='ตัวเลขยังไม่เอื้อ ควรต่อรอง';}
+
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('results').classList.remove('hidden');
+  document.getElementById('verdict-text').textContent=vText;
+  document.getElementById('verdict-text').className='verdict-text '+vClass;
+  document.getElementById('verdict-sub').textContent=`${vSub} (Score: ${score}/100)`;
+  const bar=document.getElementById('score-bar');bar.style.width=score+'%';bar.className='score-bar '+vClass;
+
+  const sm=(id,val,bench,bc)=>{document.getElementById(id).textContent=val;const b=document.getElementById(id+'-bench');if(b){b.textContent=bench;b.className='metric-bench'+(bc?' '+bc:'');}};
+  sm('m-er',erPct>0?erPct.toFixed(1):'—',erPct>=EB?`↗ สูงกว่าเกณฑ์`:`↘ ต่ำกว่าเกณฑ์`,erPct>=EB?'good':'bad');
+  sm('m-cpm',cpm!==null?fmtN(cpm):'—',cpm!==null?(cpm<=targetCpm?'↗ ถูกกว่าเป้า':'↘ แพงกว่าเป้า'):`เป้า ฿${targetCpm}`,cpm!==null?(cpm<=targetCpm?'good':'bad'):'');
+  sm('m-rev',aov>0?fmt(revenue):'N/A',aov>0?`จาก conv ${convRate}%`:'ระบุ AOV เพื่อคำนวน','');
+  sm('m-roi',roi!==null?(roi>=0?'+':'')+roi.toFixed(0):'—',roi!==null?(roi>=0?'↗ มีกำไร':'↘ ขาดทุน'):'ใส่ AOV + Margin',roi!==null?(roi>=30?'good':roi>=0?'mid':'bad'):'');
+  sm('m-conv',aov>0?fmtN(conversions):'—',aov>0?`จาก ${fmt(totalViews)} views`:'','');
+  document.getElementById('m-cpe').textContent=cpe!==null?fmtN(cpe,2):'—';
+  sm('m-be',breakeven!==null?fmt(breakeven)+' views':'—',breakeven!==null?(totalViews>=breakeven?'↗ Views เพียงพอ':`↘ ยังขาด ${fmt(breakeven-totalViews)}`):'' ,breakeven!==null?(totalViews>=breakeven?'good':'bad'):'');
+  document.getElementById('m-alloc').textContent=allocPct!==null?allocPct.toFixed(1):'—';
+  document.getElementById('reason-list').innerHTML=reasons.map(([t,txt])=>`<li><span class="reason-icon ${t}">${t==='pos'?'+':t==='neg'?'−':'~'}</span><span>${txt}</span></li>`).join('');
+
+  const card=document.getElementById('profileCard');
+  const channelName=card.querySelector('.name')?.textContent||'Influencer';
+  document.getElementById('copy-text').textContent=
+    `📊 ROI Report — ${channelName}\n`+
+    `━━━━━━━━━━━━━━━━━━━\n`+
+    `ค่าจ้าง: ฿${fmtN(totalFee)} (${count} content)\n`+
+    `Followers: ${fmt(followers)}  |  Avg Views: ${fmt(avgViews)}\n`+
+    `ER: ${erPct.toFixed(1)}%  |  CPM: ฿${cpm!==null?fmtN(cpm):'—'}\n`+
+    (aov>0?`Revenue: ฿${fmt(revenue)}  |  ROI: ${roi!==null?(roi>=0?'+':'')+roi.toFixed(0)+'%':'—'}\n`:'')+
+    `คำตัดสิน: ${vText} (${score}/100)\n`;
+}
+function copyResult(){navigator.clipboard.writeText(document.getElementById('copy-text').textContent).then(()=>toast('✓ Copy แล้ว','success'));}
+
+// ── TOAST ──
+let _tt;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast'+(type?' '+type:'');
+  el.classList.add('show'); clearTimeout(_tt);
+  _tt=setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+initAuth();
+</script>
+</body>
+</html>
