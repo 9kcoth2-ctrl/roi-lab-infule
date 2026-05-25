@@ -424,7 +424,7 @@
             <div class="avg-result" id="avg-result">
               เฉลี่ย <span class="v" id="avg-result-val">—</span> · ใส่ในช่องด้านบนแล้ว
             </div>
-            <div class="avg-max-note">สูงสุด 10 คลิป · กด "ข้าม / ใส่เอง" ถ้ายอดวิวอยู่นอกตัวเลือก แล้วพิมพ์เองในช่อง "ยอดวิวเฉลี่ย/คลิป"</div>
+            <div class="avg-max-note">สูงสุด 20 คลิป · กด "ข้าม / ใส่เอง" ถ้ายอดวิวอยู่นอกตัวเลือก แล้วพิมพ์เองในช่อง "ยอดวิวเฉลี่ย/คลิป"</div>
           </div>
         </div>
 
@@ -765,7 +765,7 @@ function syncConv(){const v=parseFloat(document.getElementById('conv-rate').valu
 
 // ── VIEW AVERAGER ──
 let clipViews = []; // array of numbers (each clip's view count)
-const MAX_CLIPS = 10;
+const MAX_CLIPS = 20;
 
 function fmtView(n) {
   if(n >= 1000000) return (n/1000000) + 'M';
@@ -794,14 +794,14 @@ function renderClipList() {
 
 function pickView(n) {
   if(clipViews.length >= MAX_CLIPS) {
-    toast('ครบ 10 คลิปแล้ว — กดคำนวณเฉลี่ยได้เลย','');
+    toast('ครบ 20 คลิปแล้ว — กดคำนวณเฉลี่ยได้เลย','');
     return;
   }
   clipViews.push(n);
   document.getElementById('avg-result').classList.remove('show');
   renderClipList();
   if(clipViews.length === MAX_CLIPS) {
-    toast('ครบ 10 คลิป — กดคำนวณเฉลี่ยได้','success');
+    toast('ครบ 20 คลิป — กดคำนวณเฉลี่ยได้','success');
   }
 }
 
