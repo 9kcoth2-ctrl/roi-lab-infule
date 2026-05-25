@@ -155,6 +155,7 @@
   .metric-value .unit{font-family:'IBM Plex Sans Thai',sans-serif;font-size:12px;font-weight:400;color:var(--muted);margin-left:4px;}
   .metric-bench{font-size:11px;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace;}
   .metric-bench.good{color:var(--good);}.metric-bench.bad{color:var(--bad);}.metric-bench.mid{color:var(--mid);}
+  .metric-explain{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5;border-top:1px dashed rgba(26,24,21,0.12);padding-top:5px;}
   .breakdown{margin-top:12px;border:2px solid var(--line);background:var(--paper);padding:18px 20px;}
   .breakdown h3{font-family:'Fraunces',serif;font-weight:600;font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
   .breakdown h3::before{content:'※';color:var(--accent);}
@@ -376,11 +377,11 @@
         <div class="field-row">
           <div>
             <label>ผู้ติดตาม</label>
-            <input type="number" id="followers" value="50000" min="0" oninput="calculate()">
+            <input type="number" id="followers" placeholder="เช่น 50000" min="0" oninput="syncER()">
           </div>
           <div>
             <label>ยอดวิวเฉลี่ย/คลิป</label>
-            <input type="number" id="avg-views" value="15000" min="0" oninput="calculate()">
+            <input type="number" id="avg-views" placeholder="เช่น 15000" min="0" oninput="calculate()">
           </div>
         </div>
 
@@ -442,32 +443,31 @@
 
         <div class="field-row">
           <div>
-            <label>Engagement เฉลี่ย/คลิป</label>
-            <input type="number" id="avg-engage" value="600" min="0" oninput="calculate()">
-            <div class="hint">like + comment + share รวมกัน</div>
+            <label>Engagement Rate <span style="color:var(--muted);font-weight:400;font-size:11px">(ER%)</span></label>
+            <div class="range-wrap">
+              <input type="range" id="er-rate" min="0.1" max="20" step="0.1" value="4" oninput="syncER()">
+              <div class="range-val" id="er-rate-val">4.0%</div>
+            </div>
+            <div class="hint" id="er-engage-hint">= engagement ประมาณ — (กรอก followers ก่อน)</div>
+            <div class="hint" style="margin-top:2px">TikTok ~4–8% · IG ~2–4%</div>
           </div>
           <div>
             <label>ราคาที่อินฟลูเสนอ (฿)</label>
-            <input type="number" id="price" value="8000" min="0" oninput="calculate()">
+            <input type="number" id="price" placeholder="เช่น 8000" min="0" oninput="calculate()">
           </div>
         </div>
 
         <div class="field-group">
           <label>จำนวนคอนเทนต์</label>
-          <input type="number" id="content-count" value="1" min="1" oninput="calculate()">
+          <input type="number" id="content-count" placeholder="เช่น 1" min="1" oninput="calculate()">
         </div>
 
         <div class="field-group">
           <label>CPM เป้าหมาย (฿/1,000 วิว)</label>
-          <input type="number" id="target-cpm" value="80" min="0" oninput="calculate()">
+          <input type="number" id="target-cpm" placeholder="เช่น 80" min="0" oninput="calculate()">
           <div class="hint">ตลาดไทย ~30–120 ฿ · ต่ำกว่า 50 = ถูกมาก · 50–100 = ราคาตลาด · 100–200 = แพงไปนิด · สูงกว่า 200 = แพงเกิน</div>
         </div>
 
-        <!-- NEXT PERSON BUTTON -->
-        <button class="next-person-btn" id="next-person-btn" onclick="addNextPerson()">
-          <span style="font-size:18px">＋</span> เพิ่มอินฟลูคนถัดไป
-          <span id="next-person-count" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">(ยังเพิ่มได้อีก <span id="slots-left">9</span> คน)</span>
-        </button>
 
       </section>
 
@@ -495,25 +495,29 @@
               <div class="metric-label">Engagement Rate</div>
               <div class="metric-value"><span id="m-er">—</span><span class="unit">%</span></div>
               <div id="m-er-bench" class="metric-bench">—</div>
-              <div class="metric-bench" style="color:var(--muted);margin-top:2px">5%+ ดีมาก · 3–5% ปกติ · &lt;3% ต่ำ</div>
+              <div class="metric-explain">คนที่เห็นโพสต์แล้ว กด like / comment / share กี่ % — ยิ่งสูง แสดงว่า followers มีคุณภาพและตอบสนองจริง</div>
+              <div class="metric-bench" style="color:var(--muted);margin-top:4px">5%+ ดีมาก · 3–5% ปกติ · &lt;3% ต่ำ</div>
             </div>
             <div class="metric">
-              <div class="metric-label">CPM จริง (฿/1K วิว)</div>
+              <div class="metric-label">CPM (ต้นทุน / 1,000 วิว)</div>
               <div class="metric-value">฿<span id="m-cpm">—</span></div>
               <div id="m-cpm-bench" class="metric-bench">—</div>
-              <div class="metric-bench" style="color:var(--muted);margin-top:2px">&lt;50 ถูกมาก · 50–100 ตลาด · &gt;200 แพง</div>
+              <div class="metric-explain">จ่ายเงินกี่บาทเพื่อให้คน 1,000 คนเห็นคอนเทนต์ — ยิ่งถูก ยิ่งคุ้มต่อการจ้าง</div>
+              <div class="metric-bench" style="color:var(--muted);margin-top:4px">&lt;฿50 ถูกมาก · ฿50–100 ราคาตลาด · &gt;฿200 แพงเกิน</div>
             </div>
             <div class="metric">
-              <div class="metric-label">CPE (฿ / engagement)</div>
+              <div class="metric-label">CPE (ต้นทุน / engagement)</div>
               <div class="metric-value">฿<span id="m-cpe">—</span></div>
               <div id="m-cpe-bench" class="metric-bench">—</div>
-              <div class="metric-bench" style="color:var(--muted);margin-top:2px">&lt;10 ดีมาก · 10–30 ปกติ · &gt;30 แพง</div>
+              <div class="metric-explain">จ่ายเงินกี่บาทเพื่อให้เกิด 1 like / comment / share — วัดว่าเงินที่จ่ายไปกระตุ้น audience ได้คุ้มแค่ไหน</div>
+              <div class="metric-bench" style="color:var(--muted);margin-top:4px">&lt;฿10 ดีมาก · ฿10–30 ปกติ · &gt;฿30 แพง</div>
             </div>
             <div class="metric">
               <div class="metric-label">View / Follower</div>
               <div class="metric-value"><span id="m-vf">—</span><span class="unit">%</span></div>
               <div id="m-vf-bench" class="metric-bench">—</div>
-              <div class="metric-bench" style="color:var(--muted);margin-top:2px">10%+ ปกติ · 5–10 ต่ำ · &lt;5% เสี่ยง</div>
+              <div class="metric-explain">ยอดวิวเฉลี่ยคิดเป็นกี่ % ของ followers — ถ้าต่ำมาก อาจมี followers ที่ซื้อมาหรือ inactive</div>
+              <div class="metric-bench" style="color:var(--muted);margin-top:4px">&gt;10% ปกติ · 5–10% ต่ำ · &lt;5% เสี่ยง</div>
             </div>
           </div>
 
@@ -522,6 +526,12 @@
             <ul id="reason-list" class="reason-list"></ul>
           </div>
         </div>
+
+        <!-- NEXT PERSON BUTTON — after results -->
+        <button class="next-person-btn" id="next-person-btn" onclick="addNextPerson()" style="margin-top:16px">
+          <span style="font-size:18px">＋</span> เพิ่มอินฟลูคนถัดไป
+          <span id="next-person-count" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">(ยังเพิ่มได้อีก <span id="slots-left">9</span> คน)</span>
+        </button>
 
         <div class="footnote">* เป็นการประมาณการ — ผลจริงขึ้นกับคุณภาพคอนเทนต์<br>* ข้อมูลไม่ถูกบันทึก รีเฟรชแล้วรีเซ็ต</div>
       </section>
@@ -592,7 +602,7 @@ let currentPersonIdx = 0;
 function createEmptyPerson() {
   return {
     profileData: { channelName:'', handle:'', profileUrl:'', inputUrl:'', avatarUrl:'' },
-    fields: { followers:50000, avgViews:15000, avgEngage:600, price:8000, count:1, targetCpm:80, url:'' },
+    fields: { followers:0, avgViews:0, erRate:4, price:0, count:1, targetCpm:0, url:'' },
     calc: null,
     clipViews: []
   };
@@ -652,7 +662,7 @@ function saveCurrentFields() {
   p.fields = {
     followers: parseFloat(document.getElementById('followers').value)||0,
     avgViews:  parseFloat(document.getElementById('avg-views').value)||0,
-    avgEngage: parseFloat(document.getElementById('avg-engage').value)||0,
+    erRate: parseFloat(document.getElementById('er-rate').value)||4,
     price:     parseFloat(document.getElementById('price').value)||0,
     count:     parseInt(document.getElementById('content-count').value)||1,
     targetCpm: parseFloat(document.getElementById('target-cpm').value)||80,
@@ -666,12 +676,13 @@ function loadPersonIntoUI(idx) {
   const p = persons[idx];
 
   // Load fields
-  document.getElementById('followers').value = p.fields.followers;
-  document.getElementById('avg-views').value = p.fields.avgViews;
-  document.getElementById('avg-engage').value = p.fields.avgEngage;
-  document.getElementById('price').value = p.fields.price;
-  document.getElementById('content-count').value = p.fields.count;
-  document.getElementById('target-cpm').value = p.fields.targetCpm;
+  document.getElementById('followers').value = p.fields.followers || '';
+  document.getElementById('avg-views').value = p.fields.avgViews || '';
+  document.getElementById('er-rate').value = p.fields.erRate || 4;
+  document.getElementById('er-rate-val').textContent = (p.fields.erRate||4).toFixed(1)+'%';
+  document.getElementById('price').value = p.fields.price || '';
+  document.getElementById('content-count').value = p.fields.count || '';
+  document.getElementById('target-cpm').value = p.fields.targetCpm || '';
   document.getElementById('tiktokUrl').value = p.fields.url;
 
   // Load clip views
@@ -835,6 +846,19 @@ function resetClips(){clipViews=[];document.getElementById('avg-result').classLi
 function applyAverage(){if(!clipViews.length)return;const avg=Math.round(clipViews.reduce((a,b)=>a+b,0)/clipViews.length);document.getElementById('avg-views').value=avg;const r=document.getElementById('avg-result');document.getElementById('avg-result-val').textContent=fmtN(avg)+' ('+fmtView(avg)+')';r.classList.add('show');toast('ใส่ค่าเฉลี่ยในช่องด้านบนแล้ว','success');calculate();}
 renderClipList();
 
+function syncER(){
+  const v=parseFloat(document.getElementById('er-rate').value)||4;
+  document.getElementById('er-rate-val').textContent=v.toFixed(1)+'%';
+  const followers=parseFloat(document.getElementById('followers').value)||0;
+  const hint=document.getElementById('er-engage-hint');
+  if(followers>0){
+    const eng=Math.round(followers*(v/100));
+    hint.textContent='= engagement ประมาณ '+fmtN(eng)+' ต่อคลิป';
+  } else {
+    hint.textContent='= engagement ประมาณ — (กรอก followers ก่อน)';
+  }
+  calculate();
+}
 // ── CALCULATE ──
 function fmt(n){if(n===null||isNaN(n))return'—';if(Math.abs(n)>=1000000)return(n/1000000).toFixed(2)+'M';if(Math.abs(n)>=1000)return(n/1000).toFixed(1)+'K';return n.toFixed(0);}
 function fmtN(n,d=0){if(n===null||isNaN(n))return'—';return n.toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});}
@@ -842,7 +866,8 @@ function fmtN(n,d=0){if(n===null||isNaN(n))return'—';return n.toLocaleString('
 function calculate(){
   const followers=parseFloat(document.getElementById('followers').value)||0;
   const avgViews=parseFloat(document.getElementById('avg-views').value)||0;
-  const avgEngage=parseFloat(document.getElementById('avg-engage').value)||0;
+  const erRate=parseFloat(document.getElementById('er-rate').value)||4;
+  const avgEngage=followers>0 ? Math.round(followers*(erRate/100)) : 0;
   const price=parseFloat(document.getElementById('price').value)||0;
   const count=parseInt(document.getElementById('content-count').value)||1;
   const targetCpm=parseFloat(document.getElementById('target-cpm').value)||80;
@@ -859,8 +884,8 @@ function calculate(){
   const totalViews = avgViews * count;
   const totalEng = avgEngage * count;
 
-  // ER: engagement / followers × 100
-  const erPct = followers>0 ? (avgEngage/followers)*100 : 0;
+  // ER comes directly from slider
+  const erPct = erRate;
 
   // CPM: cost / views × 1000
   const cpm = totalViews>0 ? (totalFee/totalViews)*1000 : null;
@@ -877,27 +902,27 @@ function calculate(){
   const reasons = [];
 
   // 1. Engagement Rate (weight 25)
-  if(erPct >= 5){score+=15;reasons.push(['pos',`Engagement Rate ${erPct.toFixed(1)}% — ดีมาก (เกณฑ์ >5%)`]);}
-  else if(erPct >= 3){score+=5;reasons.push(['neu',`Engagement Rate ${erPct.toFixed(1)}% — อยู่ในระดับปกติ (3–5%)`]);}
-  else if(erPct > 0){score-=15;reasons.push(['neg',`Engagement Rate ${erPct.toFixed(1)}% — ต่ำกว่าเกณฑ์ (เกณฑ์ 3%) ควรระวัง`]);}
-  else{reasons.push(['neu','ยังไม่ได้ใส่ข้อมูล followers — ยังไม่สามารถคำนวณ ER ได้']);}
+  if(erPct >= 5){score+=15;reasons.push(['pos',`Engagement Rate ${erPct.toFixed(1)}% — Excellent (benchmark >5%)`]);}
+  else if(erPct >= 3){score+=5;reasons.push(['neu',`Engagement Rate ${erPct.toFixed(1)}% — Normal range (3-5%)`]);}
+  else if(erPct > 0){score-=15;reasons.push(['neg',`Engagement Rate ${erPct.toFixed(1)}% — Below benchmark (<3%), be cautious`]);}
+  else{reasons.push(['neu','No followers data — cannot calculate ER yet']);}
 
   // 2. CPM (weight 25)
   if(cpm!==null){
-    if(cpm<50){score+=15;reasons.push(['pos',`CPM ฿${cpm.toFixed(0)} — ถูกมาก (เกณฑ์ <฿50) คุ้มมาก`]);}
-    else if(cpm<=100){score+=8;reasons.push(['neu',`CPM ฿${cpm.toFixed(0)} — อยู่ในราคาตลาด (฿50–100)`]);}
-    else if(cpm<=200){score-=8;reasons.push(['neu',`CPM ฿${cpm.toFixed(0)} — แพงไปนิด (฿100–200) ลองต่อรอง`]);}
-    else{score-=18;reasons.push(['neg',`CPM ฿${cpm.toFixed(0)} — แพงเกินไป (>฿200) ควรต่อรองราคา`]);}
+    if(cpm<50){score+=15;reasons.push(['pos',`CPM B${cpm.toFixed(0)} — Very cheap (<B50), excellent value`]);}
+    else if(cpm<=100){score+=8;reasons.push(['neu',`CPM B${cpm.toFixed(0)} — Market rate (B50-100)`]);}
+    else if(cpm<=200){score-=8;reasons.push(['neu',`CPM B${cpm.toFixed(0)} — Slightly high (B100-200), try negotiating`]);}
+    else{score-=18;reasons.push(['neg',`CPM B${cpm.toFixed(0)} — Too expensive (>B200), negotiate price`]);}
     // เทียบกับเป้าที่ตั้ง
-    if(cpm<=targetCpm){reasons.push(['pos',`CPM อยู่ในหรือต่ำกว่าเป้าที่ตั้งไว้ (฿${targetCpm})`]);}
-    else{score-=5;reasons.push(['neg',`CPM เกินกว่าเป้าที่ตั้งไว้ (เป้า ฿${targetCpm})`]);}
+    if(cpm<=targetCpm){reasons.push(['pos',`CPM is at or below your target (B${targetCpm})`]);}
+    else{score-=5;reasons.push(['neg',`CPM exceeds your target (target B${targetCpm})`]);}
   }
 
   // 3. CPE (weight 20)
   if(cpe!==null){
-    if(cpe<10){score+=10;reasons.push(['pos',`CPE ฿${cpe.toFixed(2)} — ดีมาก (เกณฑ์ <฿10)`]);}
-    else if(cpe<=30){score+=3;reasons.push(['neu',`CPE ฿${cpe.toFixed(2)} — ปกติ (฿10–30)`]);}
-    else{score-=10;reasons.push(['neg',`CPE ฿${cpe.toFixed(2)} — แพง (>฿30) ต้นทุนต่อ engagement สูง`]);}
+    if(cpe<10){score+=10;reasons.push(['pos',`CPE B${cpe.toFixed(2)} — Excellent (<B10 per engagement)`]);}
+    else if(cpe<=30){score+=3;reasons.push(['neu',`CPE B${cpe.toFixed(2)} — Normal (B10-30 per engagement)`]);}
+    else{score-=10;reasons.push(['neg',`CPE B${cpe.toFixed(2)} — Expensive (>B30), high cost per engagement`]);}
   }
 
   // 4. View/Follower ratio — fake follower detection (weight 20)
@@ -907,17 +932,17 @@ function calculate(){
       ffLevel='low'; score-=12;
       ffTitle='สัญญาณเตือน: View/Follower ต่ำมาก';
       ffDesc=`Views เพียง ${vfRatio.toFixed(1)}% ของ followers — เสี่ยงมี followers ที่ไม่ active หรืออาจซื้อมา (ค่าปกติ >10%)`;
-      reasons.push(['neg',`View/Follower ${vfRatio.toFixed(1)}% — ต่ำมาก เสี่ยง followers ไม่จริง`]);
+      reasons.push(['neg',`View/Follower ${vfRatio.toFixed(1)}% — Very low, possible fake followers`]);
     } else if(vfRatio<10){
       ffLevel='mid'; score-=4;
       ffTitle='View/Follower ค่อนข้างต่ำ';
       ffDesc=`Views ${vfRatio.toFixed(1)}% ของ followers — ควรขอดู Insight เพิ่มเติมก่อนตัดสินใจ (ค่าปกติ 10–30%)`;
-      reasons.push(['neu',`View/Follower ${vfRatio.toFixed(1)}% — ต่ำกว่าเกณฑ์ ควรตรวจสอบเพิ่มเติม`]);
+      reasons.push(['neu',`View/Follower ${vfRatio.toFixed(1)}% — Below average, request further verification`]);
     } else {
       ffLevel='high'; score+=5;
       ffTitle='View/Follower อยู่ในเกณฑ์ดี';
       ffDesc=`Views ${vfRatio.toFixed(1)}% ของ followers — สัดส่วนปกติ น่าเชื่อถือ`;
-      reasons.push(['pos',`View/Follower ${vfRatio.toFixed(1)}% — สัดส่วนปกติ followers น่าเชื่อถือ`]);
+      reasons.push(['pos',`View/Follower ${vfRatio.toFixed(1)}% — Normal ratio, followers look authentic`]);
     }
   }
 
@@ -933,7 +958,7 @@ function calculate(){
     followers, avgViews, avgEngage, price, count,
     totalFee, totalViews, totalEng, targetCpm,
     erPct, cpm, cpe, vfRatio, ffLevel, ffTitle, ffDesc,
-    score, vText, vSub, vClass, reasons,
+    score, vText, vSub, vClass, reasons, ffTitle, ffDesc,
     channelName: persons[currentPersonIdx].profileData.channelName||'',
     handle: persons[currentPersonIdx].profileData.handle||'',
     profileUrl: persons[currentPersonIdx].profileData.profileUrl||''
@@ -973,9 +998,28 @@ function calculate(){
   sm('m-vf', vfRatio!==null?vfRatio.toFixed(1):'—');
   sb2('m-vf-bench', vfRatio!==null?(vfRatio>=10?'สัดส่วนปกติ':vfRatio>=5?'ค่อนข้างต่ำ':'ต่ำมาก เสี่ยง'):'—', vfRatio!==null?(vfRatio>=10?'good':vfRatio>=5?'mid':'bad'):'');
 
-  document.getElementById('reason-list').innerHTML=reasons.map(([t,txt])=>
-    `<li><span class="reason-icon ${t}">${t==='pos'?'+':t==='neg'?'−':'~'}</span><span>${txt}</span></li>`
-  ).join('');
+  document.getElementById('reason-list').innerHTML=reasons.map(([t,txt])=>{
+    // Thai display translations
+    const thTxt = txt
+      .replace('Excellent (benchmark >5%)','ดีมาก (เกณฑ์ >5%)')
+      .replace('Normal range (3-5%)','ปกติ (3–5%)')
+      .replace('Below benchmark (<3%), be cautious','ต่ำกว่าเกณฑ์ ควรระวัง')
+      .replace('No followers data — cannot calculate ER yet','ยังไม่ได้ใส่ followers — คำนวณ ER ไม่ได้')
+      .replace(/CPM B(\d+) — Very cheap \(<B50\), excellent value/,'CPM ฿$1 — ถูกมาก คุ้มมาก')
+      .replace(/CPM B(\d+) — Market rate \(B50-100\)/,'CPM ฿$1 — ราคาตลาด')
+      .replace(/CPM B(\d+) — Slightly high \(B100-200\), try negotiating/,'CPM ฿$1 — แพงไปนิด ลองต่อรอง')
+      .replace(/CPM B(\d+) — Too expensive \(>B200\), negotiate price/,'CPM ฿$1 — แพงเกินไป ควรต่อรอง')
+      .replace(/CPM is at or below your target \(B(\d+)\)/,'CPM อยู่ในหรือต่ำกว่าเป้า (฿$1)')
+      .replace(/CPM exceeds your target \(target B(\d+)\)/,'CPM เกินกว่าเป้าที่ตั้งไว้ (฿$1)')
+      .replace(/CPE B([\d.]+) — Excellent \(<B10 per engagement\)/,'CPE ฿$1 — ดีมาก')
+      .replace(/CPE B([\d.]+) — Normal \(B10-30 per engagement\)/,'CPE ฿$1 — ปกติ')
+      .replace(/CPE B([\d.]+) — Expensive \(>B30\), high cost per engagement/,'CPE ฿$1 — แพง ต้นทุน/engagement สูง')
+      .replace(/View\/Follower ([\d.]+)% — Very low, possible fake followers/,'View/Follower $1% — ต่ำมาก เสี่ยง followers ไม่จริง')
+      .replace(/View\/Follower ([\d.]+)% — Below average, request further verification/,'View/Follower $1% — ต่ำกว่าเกณฑ์ ควรตรวจสอบเพิ่มเติม')
+      .replace(/View\/Follower ([\d.]+)% — Normal ratio, followers look authentic/,'View/Follower $1% — สัดส่วนปกติ น่าเชื่อถือ')
+      .replace('Engagement Rate','Engagement Rate');
+    return `<li><span class="reason-icon ${t}">${t==='pos'?'+':t==='neg'?'−':'~'}</span><span>${thTxt}</span></li>`;
+  }).join('');
 
   renderPersonTabs();
 }
@@ -1011,19 +1055,19 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
   doc.text(pd.channelName||pd.handle||'ไม่ระบุ', M+2, y+13);
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...COLOR.muted);
   if(pd.profileUrl){doc.textWithLink(pd.profileUrl, M+2, y+19, {url:pd.profileUrl});}
-  else{doc.text('ไม่ได้ระบุลิงก์', M+2, y+19);}
+  else{doc.text('No link provided', M+2, y+19);}
   doc.setTextColor(...COLOR.ink); doc.setFontSize(7.5);
-  doc.text(`Followers: ${fmtN(c.followers)}  |  Avg Views: ${fmtN(c.avgViews)}  |  Engagement/คลิป: ${fmtN(c.avgEngage)}  |  จำนวนคอนเทนต์: ${c.count}`, M+2, y+23);
+  doc.text(`Followers: ${fmtN(c.followers)}  |  Avg Views: ${fmtN(c.avgViews)}  |  ER: ${c.erPct.toFixed(1)}%  |  Contents: ${c.count}  |  Fee: B${fmtN(c.totalFee)}`, M+2, y+23);
   y += 30;
 
   // Verdict band
   const vColor = COLOR[c.vClass]||COLOR.mid;
   doc.setFillColor(...vColor); doc.rect(M,y,W-M*2,22,'F');
   doc.setTextColor(...COLOR.paper); doc.setFont('helvetica','bold'); doc.setFontSize(6.5);
-  doc.text('ผลการประเมิน', M+3, y+5);
-  doc.setFontSize(20); doc.text(c.vText, M+3, y+14);
+  doc.text('VERDICT', M+3, y+5);
+  doc.setFontSize(20); doc.text(c.vClass==='good'?'WORTH IT':c.vClass==='mid'?'BORDERLINE':'NOT WORTH IT', M+3, y+14);
   doc.setFont('helvetica','normal'); doc.setFontSize(8);
-  doc.text(c.vSub, M+3, y+19);
+  doc.text(c.vClass==='good'?'Numbers indicate a good hire':c.vClass==='mid'?'Some points need consideration':'Numbers suggest negotiating or finding alternatives', M+3, y+19);
   doc.setFont('helvetica','bold'); doc.setFontSize(30);
   doc.text(String(c.score), W-M-3, y+15, {align:'right'});
   doc.setFontSize(8); doc.setFont('helvetica','normal');
@@ -1033,10 +1077,10 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
   // Metrics grid (2×2)
   const colW=(W-M*2)/2, rowH=22;
   const metrics=[
-    ['Engagement Rate',     c.erPct>0?c.erPct.toFixed(1)+'%':'—',    c.erPct>=5?'ดีมาก':c.erPct>=3?'ปกติ':'ต่ำกว่าเกณฑ์',   '5%+ ดีมาก · 3–5% ปกติ · <3% ต่ำ'],
-    ['CPM (฿/1,000 วิว)',   c.cpm!==null?'฿'+fmtN(c.cpm,0):'—',     c.cpm!==null?(c.cpm<50?'ถูกมาก':c.cpm<=100?'ราคาตลาด':c.cpm<=200?'แพงไปนิด':'แพงเกินไป'):'—', '<50 ถูกมาก · 50–100 ตลาด · >200 แพง'],
-    ['CPE (฿/engagement)',  c.cpe!==null?'฿'+fmtN(c.cpe,2):'—',     c.cpe!==null?(c.cpe<10?'ดีมาก':c.cpe<=30?'ปกติ':'แพง'):'—', '<10 ดีมาก · 10–30 ปกติ · >30 แพง'],
-    ['View/Follower',       c.vfRatio!==null?c.vfRatio.toFixed(1)+'%':'—', c.vfRatio!==null?(c.vfRatio>=10?'สัดส่วนปกติ':c.vfRatio>=5?'ค่อนข้างต่ำ':'ต่ำมาก เสี่ยง'):'—', '>10% ปกติ · 5–10% ต่ำ · <5% เสี่ยง']
+    ['Engagement Rate',     c.erPct>0?c.erPct.toFixed(1)+'%':'—',    c.erPct>=5?'Excellent':c.erPct>=3?'Normal':'Below avg',   '5%+ Excellent · 3-5% Normal · <3% Low'],
+    ['CPM (B/1,000 views)', c.cpm!==null?'B'+fmtN(c.cpm,0):'—',     c.cpm!==null?(c.cpm<50?'Very cheap':c.cpm<=100?'Market rate':c.cpm<=200?'A bit high':'Too expensive'):'—', '<50 Very cheap · 50-100 Market · >200 Expensive'],
+    ['CPE (B/engagement)',  c.cpe!==null?'B'+fmtN(c.cpe,2):'—',     c.cpe!==null?(c.cpe<10?'Excellent':c.cpe<=30?'Normal':'Expensive'):'—', '<10 Excellent · 10-30 Normal · >30 Expensive'],
+    ['View/Follower',       c.vfRatio!==null?c.vfRatio.toFixed(1)+'%':'—', c.vfRatio!==null?(c.vfRatio>=10?'Normal':c.vfRatio>=5?'Below avg':'Low - risky'):'—', '>10% Normal · 5-10% Low · <5% Risky']
   ];
   metrics.forEach((m,i)=>{
     const col=i%2, row=Math.floor(i/2);
@@ -1057,7 +1101,7 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
   doc.setFillColor(244,241,234); doc.setDrawColor(...COLOR.ink); doc.setLineWidth(0.4);
   doc.rect(M,y,W-M*2,12,'FD');
   doc.setTextColor(...COLOR.muted); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-  doc.text('ค่าจ้างรวม',M+2,y+4); doc.text('ยอดวิวรวม',M+48,y+4); doc.text('Engagement รวม',M+95,y+4);
+  doc.text('TOTAL FEE',M+2,y+4); doc.text('TOTAL VIEWS',M+48,y+4); doc.text('TOTAL ENGAGEMENT',M+95,y+4);
   doc.setTextColor(...COLOR.ink); doc.setFont('helvetica','bold'); doc.setFontSize(10);
   doc.text('฿'+fmtN(c.totalFee),M+2,y+10); doc.text(fmtN(c.totalViews),M+48,y+10); doc.text(fmtN(c.totalEng),M+95,y+10);
   y += 16;
@@ -1068,17 +1112,19 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
     doc.setFillColor(...ffCol); doc.rect(M,y,5,12,'F');
     doc.setDrawColor(...COLOR.ink); doc.setLineWidth(0.3); doc.rect(M,y,W-M*2,12);
     doc.setTextColor(...COLOR.ink); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
-    doc.text(c.ffTitle, M+8, y+5.5);
+    doc.text(c.ffLevel==='low'?'WARNING: View/Follower ratio very low':c.ffLevel==='mid'?'View/Follower ratio below average':'View/Follower ratio looks healthy', M+8, y+5.5);
     doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...COLOR.muted);
     const lines=doc.splitTextToSize(c.ffDesc, W-M*2-12);
-    doc.text(lines, M+8, y+10);
+    const ffDescEn = c.ffLevel==='low'?`Views ${c.vfRatio!==null?c.vfRatio.toFixed(1):'?'}% of followers - possible inactive/purchased followers (normal >10%)`:c.ffLevel==='mid'?`Views ${c.vfRatio!==null?c.vfRatio.toFixed(1):'?'}% of followers - request insight before deciding (normal 10-30%)`:`Views ${c.vfRatio!==null?c.vfRatio.toFixed(1):'?'}% of followers - normal ratio, trustworthy`;
+    const lines2=doc.splitTextToSize(ffDescEn, W-M*2-12);
+    doc.text(lines2, M+8, y+10);
     y += 12 + Math.max(0,(lines.length-1)*4) + 4;
   }
 
   // Reasons
   if(y+6+c.reasons.length*5 > 280){doc.addPage();y=M;}
   doc.setTextColor(...COLOR.ink); doc.setFont('helvetica','bold'); doc.setFontSize(10);
-  doc.text('เหตุผลประกอบการตัดสิน', M, y); y+=5;
+  doc.text('EVALUATION REASONS', M, y); y+=5;
   doc.setDrawColor(...COLOR.ink); doc.setLineWidth(0.3); doc.line(M,y-1,W-M,y-1);
   c.reasons.forEach(([t,txt])=>{
     const rc=t==='pos'?COLOR.good:t==='neg'?COLOR.bad:COLOR.mid;
@@ -1095,7 +1141,7 @@ function buildPersonPDFPage(doc, c, pd, isFirst, W, M) {
   // Footer
   doc.setDrawColor(...COLOR.ink); doc.setLineWidth(0.3); doc.line(M,285,W-M,285);
   doc.setTextColor(...COLOR.muted); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
-  doc.text('* ตัวเลขเป็นการประมาณการ ผลจริงขึ้นกับคุณภาพคอนเทนต์และตลาด', M, 289);
+  doc.text('* Estimates only. Results depend on content quality.', M, 289);
   doc.text('Influencer ROI Lab', W-M, 289, {align:'right'});
 }
 
