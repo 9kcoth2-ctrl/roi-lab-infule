@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   :root {
     --bg: #F4F1EA; --ink: #1A1815; --paper: #FBF9F4; --line: #1A1815;
@@ -309,7 +310,7 @@
           </div>
         </div>
 
-        <button class="scan-btn hidden" id="scanBtn" onclick="scanAllImages()">🔍 ให้ AI อ่านตัวเลข · <span id="scanCount">0</span> รูป</button>
+        <button class="scan-btn hidden" id="scanBtn" onclick="scanAllImages()">🔍 อ่านตัวเลขจากรูป · <span id="scanCount">0</span> รูป</button>
         <div id="scanStatus" class="scan-status hidden"></div>
 
         <div class="help-tip">
@@ -665,90 +666,96 @@ document.addEventListener('paste',e=>{
   }
 });
 
-// ── GEMINI SCAN ALL IMAGES ──
+// ── OCR SCAN (Tesseract.js — runs in browser, no API needed) ──
+function parseNumber(str) {
+  if(!str) return null;
+  const s = str.replace(/,/g,'').trim();
+  const m = s.match(/([\d.]+)\s*([KkMmBb]?)/);
+  if(!m) return null;
+  let n = parseFloat(m[1]);
+  const unit = m[2].toUpperCase();
+  if(unit==='K') n *= 1000;
+  else if(unit==='M') n *= 1000000;
+  else if(unit==='B') n *= 1000000000;
+  return Math.round(n);
+}
+
+function extractNumbers(text) {
+  const pattern = /([\d,]+\.?\d*\s*[KkMmBb]?)\b/g;
+  const results = [];
+  let m;
+  while((m = pattern.exec(text)) !== null) {
+    const n = parseNumber(m[1]);
+    if(n && n >= 500) results.push(n);
+  }
+  return results;
+}
+
+function guessStats(numbers) {
+  const sorted = [...new Set(numbers)].sort((a,b)=>b-a);
+  let followers = null;
+  let views = [];
+  for(const n of sorted) {
+    if(!followers && n >= 1000) { followers = n; continue; }
+    if(n >= 500 && n < (followers||Infinity)) views.push(n);
+  }
+  return { followers, views };
+}
+
 async function scanAllImages() {
   if(imageList.length === 0){ toast('อัปโหลดรูปก่อน','error'); return; }
-  const btn=document.getElementById('scanBtn');
-  const status=document.getElementById('scanStatus');
-  btn.disabled=true; btn.innerHTML=`<span class="spinner"></span>AI กำลังอ่าน ${imageList.length} รูป...`;
-  status.className='scan-status'; status.classList.remove('hidden');
-  status.textContent=`กำลังส่ง ${imageList.length} รูปให้ Gemini วิเคราะห์...`;
-
-  const prompt = `วิเคราะห์ภาพหน้าโปรไฟล์ TikTok (หรือ Social Media) นี้
-ให้หาตัวเลขต่อไปนี้:
-1. จำนวนผู้ติดตาม (Followers) — ดูตัวเลขที่แสดงชัดเจน เช่น 1.2M, 500K, 50,000
-2. ยอดวิวของทุกคลิปที่เห็นในภาพ — รวบรวมทุกตัวเลขที่เป็นยอดวิว
-
-ตอบกลับเป็น JSON เท่านั้น ไม่มีข้อความอื่น:
-{
-  "followers": <ตัวเลขจำนวนเต็ม หรือ null ถ้าไม่เห็น>,
-  "all_views": [<รายการยอดวิวทุกคลิปที่เห็น เป็นตัวเลขจำนวนเต็ม>],
-  "note": "<สรุปสั้นๆ ว่าเห็นอะไรบ้าง>"
-}`;
+  const btn = document.getElementById('scanBtn');
+  const status = document.getElementById('scanStatus');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>กำลังอ่านตัวเลข...';
+  status.className = 'scan-status';
+  status.classList.remove('hidden');
+  status.textContent = 'กำลังโหลด OCR engine...';
 
   try {
-    // ส่งทีละรูป แล้วรวม all_views
-    let allFollowers = null;
-    let allViews = [];
-    let notes = [];
+    const worker = await Tesseract.createWorker('eng', 1, {
+      logger: m => {
+        if(m.status === 'recognizing text')
+          status.textContent = `กำลังอ่านรูปที่ ${m.jobId||''}... ${Math.round((m.progress||0)*100)}%`;
+      }
+    });
 
+    let allNumbers = [];
     for(let i=0; i<imageList.length; i++) {
-      status.textContent = `กำลังอ่านรูปที่ ${i+1}/${imageList.length}...`;
-      if(i>0) await new Promise(r=>setTimeout(r,4000)); // delay ป้องกัน rate limit
-      const img = imageList[i];
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-        {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({
-            contents:[{parts:[
-              {text: prompt},
-              {inline_data:{mime_type:'image/jpeg',data:img.base64}}
-            ]}]
-          })
-        }
-      );
-      const data = await res.json();
-      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-      const clean = raw.replace(/```json|```/g,'').trim();
-      const parsed = JSON.parse(clean);
-      if(parsed.followers && !allFollowers) allFollowers = parsed.followers;
-      if(parsed.all_views?.length) allViews = allViews.concat(parsed.all_views);
-      if(parsed.note) notes.push(`รูป ${i+1}: ${parsed.note}`);
+      status.textContent = `สแกนรูปที่ ${i+1}/${imageList.length}...`;
+      const { data: { text } } = await worker.recognize(imageList[i].dataUrl);
+      const nums = extractNumbers(text);
+      allNumbers = allNumbers.concat(nums);
     }
+    await worker.terminate();
 
-    const avgViews = allViews.length > 0 ? Math.round(allViews.reduce((a,b)=>a+b,0)/allViews.length) : null;
+    const { followers, views } = guessStats(allNumbers);
+    const avgViews = views.length > 0 ? Math.round(views.reduce((a,b)=>a+b,0)/views.length) : null;
     let filled = [];
 
-    if(allFollowers) {
-      document.getElementById('followers').value = allFollowers;
+    if(followers) {
+      document.getElementById('followers').value = followers;
       document.getElementById('wrap-followers').classList.add('auto-filled');
-      filled.push(`ผู้ติดตาม: ${fmtN(allFollowers)}`);
+      filled.push('ผู้ติดตาม: ' + fmtN(followers));
     }
     if(avgViews) {
       document.getElementById('avg-views').value = avgViews;
       document.getElementById('wrap-avgViews').classList.add('auto-filled');
-      filled.push(`วิวเฉลี่ย: ${fmtN(avgViews)} (จาก ${allViews.length} คลิป, ${imageList.length} รูป)`);
+      filled.push('วิวเฉลี่ย: ' + fmtN(avgViews) + ' (' + views.length + ' คลิป)');
     }
 
     if(filled.length) {
-      status.className='scan-status success';
-      status.textContent = '✓ ' + filled.join(' · ') + '\n' + notes.join(' | ');
+      status.className = 'scan-status success';
+      status.textContent = '✓ ' + filled.join(' · ') + '\nตัวเลขที่เจอทั้งหมด: ' + allNumbers.slice(0,15).map(n=>fmtN(n)).join(', ');
       calculate();
-      toast('✓ AI อ่านครบ '+imageList.length+' รูป','success');
+      toast('✓ อ่านตัวเลขสำเร็จ', 'success');
     } else {
-      status.className='scan-status error';
-      status.textContent = '⚠ AI ไม่พบตัวเลข — ลองแคปใหม่ให้เห็นชัดขึ้น';
+      status.className = 'scan-status error';
+      status.textContent = '⚠ ไม่พบตัวเลข — ลองแคปใหม่ให้เห็นชัด หรือกรอกเองในช่องด้านล่าง';
     }
   } catch(e) {
-    status.className='scan-status error';
-    status.textContent = '✗ เกิดข้อผิดพลาด: '+e.message;
-    toast('✗ AI อ่านไม่ได้','error');
-  }
-  btn.disabled=false; btn.textContent='🔍 ให้ AI อ่านตัวเลข (Gemini)';
-}
-
+    status.className = 'scan-status error';
+    status.textContent = '✗ เกิดข้อผิดพลาด: ' + e.message;
 // ── ADMIN USER MANAGEMENT ──
 async function addUser() {
   const email=document.getElementById('new-email').value.trim();
