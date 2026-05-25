@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   :root {
     --bg: #F4F1EA; --ink: #1A1815; --paper: #FBF9F4; --line: #1A1815;
@@ -134,7 +133,7 @@
   .profile-info .bio { font-size:12px; color:var(--muted); margin-top:4px; line-height:1.4; }
 
   /* Upload Zone */
-  .upload-zone { border:2px dashed var(--line); background:var(--bg); padding:22px 18px; text-align:center; cursor:pointer; transition:all 0.15s; position:relative; }
+  
   .upload-zone:hover { background:var(--paper); border-color:var(--tiktok2); }
   .upload-zone.dragover { background:var(--paper); border-color:var(--tiktok2); transform:scale(0.99); }
   .upload-zone.has-image { padding:12px; cursor:default; }
@@ -142,26 +141,17 @@
   .upload-zone p { font-size:13px; color:var(--ink); margin-bottom:4px; }
   .upload-zone .hint { font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
   .upload-zone input[type="file"] { display:none; }
-  .preview-wrap { position:relative; display:inline-block; max-width:100%; }
+  
   .preview-wrap img { max-width:100%; max-height:220px; border:1.5px solid var(--line); display:block; }
-  .preview-remove { position:absolute; top:-10px; right:-10px; width:26px; height:26px; border-radius:50%; background:var(--ink); color:var(--paper); border:2px solid var(--paper); cursor:pointer; font-size:14px; font-weight:700; line-height:1; display:grid; place-items:center; }
-  .scan-btn { width:100%; margin-top:10px; padding:11px; background:var(--accent); color:var(--paper); border:2px solid var(--line); font-family:'IBM Plex Sans Thai',sans-serif; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.15s; }
+  
   .scan-btn:hover { background:var(--tiktok2); }
   .scan-btn:disabled { background:var(--muted); cursor:not-allowed; }
-  .scan-status { margin-top:10px; padding:10px 12px; font-size:12px; font-family:'JetBrains Mono',monospace; background:var(--bg); border-left:3px solid var(--ink); line-height:1.5; }
+  
   .scan-status.success { border-color:var(--good); color:var(--good); }
   .scan-status.error { border-color:var(--bad); color:var(--bad); }
 
-  /* auto-filled */
-  .field-wrap { position:relative; }
-  .field-wrap.auto-filled input { background:rgba(46,125,79,0.08); border-color:var(--good); }
-  .auto-badge { position:absolute; top:-6px; right:6px; background:var(--good); color:var(--paper); font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; letter-spacing:0.1em; display:none; }
-  .field-wrap.auto-filled .auto-badge { display:block; }
-
   kbd { background:var(--ink); color:var(--paper); padding:2px 6px; font-family:'JetBrains Mono',monospace; font-size:11px; border-radius:3px; }
-  .help-tip { margin-top:10px; padding:10px 12px; background:rgba(255,92,43,0.08); border-left:3px solid var(--accent); font-size:12px; color:var(--ink); line-height:1.5; }
-
-  /* Results */
+  
   .result-panel { position:sticky; top:20px; }
   .verdict { border:2px solid var(--line); padding:20px 24px; text-align:center; background:var(--paper); }
   .verdict-badge { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
@@ -271,7 +261,7 @@
   <div id="tab-calc">
     <div class="mode-label">
       <span>🎯</span>
-      <div><strong>โหมดประเมินก่อนจ้าง</strong><div class="desc">วางลิงก์ TikTok → ดึงชื่อ+รูป → แคปหน้าจอ → AI อ่านตัวเลขให้ → คำนวณ ROI</div></div>
+      <div><strong>โหมดประเมินก่อนจ้าง</strong><div class="desc">วางลิงก์ TikTok → ดึงชื่อ+รูป → กรอกตัวเลข → ผลลัพธ์ทันที</div></div>
     </div>
 
     <div class="layout">
@@ -288,39 +278,10 @@
 
         <div class="divider"></div>
 
-        <!-- STEP 2: SCREENSHOT -->
-        <div class="section-label">ขั้นตอน 02</div>
-        <h2 class="section-title">แคปหน้าโปรไฟล์ — AI อ่านให้</h2>
-
-        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-          <div id="uploadPlaceholder">
-            <div class="upload-icon">⤓</div>
-            <p><strong>คลิกเลือก</strong> · ลาก · หรือ <kbd>Ctrl+V</kbd></p>
-            <div class="hint">เพิ่มได้หลายรูป · PNG · JPG · max 10MB/รูป</div>
-          </div>
-          <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFileSelect(event)">
-        </div>
-
-        <div id="multiPreview" class="hidden" style="margin-top:10px;">
-          <div id="previewGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;"></div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);"><span id="imgCount">0</span> รูป</div>
-            <button onclick="document.getElementById('fileInput').click()" style="border:1.5px dashed var(--line);background:var(--bg);padding:5px 12px;font-size:12px;cursor:pointer;font-family:'IBM Plex Sans Thai',sans-serif;">+ เพิ่มรูป</button>
-            <button onclick="clearAllImages()" style="border:1.5px solid var(--bad);background:transparent;color:var(--bad);padding:5px 12px;font-size:12px;cursor:pointer;font-family:'IBM Plex Sans Thai',sans-serif;">ล้างทั้งหมด</button>
-          </div>
-        </div>
-
-        <button class="scan-btn hidden" id="scanBtn" onclick="scanAllImages()">🔍 อ่านตัวเลขจากรูป · <span id="scanCount">0</span> รูป</button>
-        <div id="scanStatus" class="scan-status hidden"></div>
-
-        <div class="help-tip">
-          <strong>💡 ทิป:</strong> แคปได้หลายรูปเลย — AI จะรวบรวมยอดวิวจากทุกรูปแล้วเฉลี่ยให้อัตโนมัติ
-        </div>
-
         <div class="divider"></div>
 
         <!-- STEP 3: NUMBERS -->
-        <div class="section-label">ขั้นตอน 03</div>
+        <div class="section-label">ขั้นตอน 02</div>
         <h2 class="section-title">ตัวเลข (แก้ไขได้)</h2>
 
         <div class="field-group">
@@ -335,13 +296,11 @@
         </div>
 
         <div class="field-row">
-          <div class="field-wrap" id="wrap-followers">
-            <span class="auto-badge">AUTO</span>
+          <div>
             <label>ผู้ติดตาม</label>
             <input type="number" id="followers" value="50000" min="0" oninput="calculate()">
           </div>
-          <div class="field-wrap" id="wrap-avgViews">
-            <span class="auto-badge">AUTO</span>
+          <div>
             <label>ยอดวิวเฉลี่ย/คลิป</label>
             <input type="number" id="avg-views" value="15000" min="0" oninput="calculate()">
           </div>
@@ -371,7 +330,7 @@
         <div class="divider"></div>
 
         <!-- STEP 4: CAMPAIGN -->
-        <div class="section-label">ขั้นตอน 04</div>
+        <div class="section-label">ขั้นตอน 03</div>
         <h2 class="section-title">เป้าหมายแคมเปญ</h2>
 
         <div class="field-group">
@@ -421,7 +380,6 @@
           </div>
         </div>
 
-        <button class="calc-btn" onclick="calculate()">คำนวณความคุ้มค่า →</button>
       </section>
 
       <!-- RESULTS -->
@@ -502,7 +460,6 @@
 <script>
 const SUPABASE_URL      = 'https://srcupxkqfxbcsdnpenfh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyY3VweGtxZnhiY3NkbnBlbmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MzYyNTcsImV4cCI6MjA5NTAxMjI1N30.nUGVWMtArzJiMpQRViogNiOSwO302FsOzsZAgwjjGV4';
-const GEMINI_KEY        = 'AIzaSyDvRlP3SiHC0-E37wxB0ck1L4p_gWVSHlg';
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -588,252 +545,6 @@ async function fetchProfile() {
 }
 document.getElementById('tiktokUrl').addEventListener('keydown',e=>{ if(e.key==='Enter') fetchProfile(); });
 
-// ── IMAGE UPLOAD (multi) ──
-let imageList = []; // [{base64, dataUrl, name}]
-
-function updatePreviewGrid() {
-  const grid = document.getElementById('previewGrid');
-  const multi = document.getElementById('multiPreview');
-  const scanBtn = document.getElementById('scanBtn');
-  const placeholder = document.getElementById('uploadPlaceholder');
-  document.getElementById('imgCount').textContent = imageList.length;
-  document.getElementById('scanCount').textContent = imageList.length;
-
-  if(imageList.length === 0) {
-    multi.classList.add('hidden');
-    scanBtn.classList.add('hidden');
-    placeholder.classList.remove('hidden');
-    document.getElementById('uploadZone').classList.remove('has-image');
-    return;
-  }
-  placeholder.classList.add('hidden');
-  document.getElementById('uploadZone').classList.add('has-image');
-  multi.classList.remove('hidden');
-  scanBtn.classList.remove('hidden');
-
-  grid.innerHTML = imageList.map((img,i) => `
-    <div style="position:relative;display:inline-block;">
-      <img src="${img.dataUrl}" style="width:80px;height:80px;object-fit:cover;border:1.5px solid var(--line);display:block;">
-      <button onclick="removeOneImage(${i})" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--paper);border:2px solid var(--paper);cursor:pointer;font-size:12px;font-weight:700;line-height:1;display:grid;place-items:center;">×</button>
-    </div>`).join('');
-}
-
-function handleFileSelect(e) {
-  const files = Array.from(e.target.files);
-  files.forEach(f => addImageFile(f));
-  e.target.value = '';
-}
-
-function addImageFile(file) {
-  if(file.size > 10*1024*1024){ toast('ไฟล์ใหญ่เกิน 10MB: '+file.name,'error'); return; }
-  const reader = new FileReader();
-  reader.onload = ev => {
-    imageList.push({ base64: ev.target.result.split(',')[1], dataUrl: ev.target.result, name: file.name });
-    updatePreviewGrid();
-  };
-  reader.readAsDataURL(file);
-}
-
-function removeOneImage(idx) {
-  imageList.splice(idx, 1);
-  updatePreviewGrid();
-}
-
-function clearAllImages() {
-  imageList = [];
-  updatePreviewGrid();
-  document.getElementById('scanStatus').classList.add('hidden');
-}
-
-// drag & drop
-const zone = document.getElementById('uploadZone');
-zone.addEventListener('dragover',e=>{ e.preventDefault(); zone.classList.add('dragover'); });
-zone.addEventListener('dragleave',()=>zone.classList.remove('dragover'));
-zone.addEventListener('drop',e=>{
-  e.preventDefault(); zone.classList.remove('dragover');
-  Array.from(e.dataTransfer.files).forEach(f=>{ if(f.type.startsWith('image/')) addImageFile(f); });
-});
-
-// Ctrl+V paste
-document.addEventListener('paste',e=>{
-  const items=e.clipboardData?.items;
-  if(!items) return;
-  for(const item of items){
-    if(item.type.startsWith('image/')){
-      addImageFile(item.getAsFile());
-      break;
-    }
-  }
-});
-
-// ── OCR SCAN (Tesseract.js — TikTok pattern aware) ──
-function parseNum(s) {
-  if(!s) return null;
-  s = s.replace(/,/g,'').replace(/\s/g,'');
-  const m = s.match(/^([\d.]+)([KkMmBb]?)$/);
-  if(!m) return null;
-  let n = parseFloat(m[1]);
-  if(isNaN(n)) return null;
-  const u = m[2].toUpperCase();
-  if(u==='K') n*=1000;
-  else if(u==='M') n*=1000000;
-  else if(u==='B') n*=1000000000;
-  return Math.round(n);
-}
-
-function parseTikTokText(text) {
-  let followers = null;
-  let views = [];
-
-  // ---- หา followers ----
-  // TH: "8812 ผู้ติดตาม" หรือ "163.1K ผู้ติดตาม"
-  const thFollower = text.match(/([\d,.]+[KkMmBb]?)\s*ผู้ติดตาม/);
-  if(thFollower) followers = parseNum(thFollower[1]);
-
-  // EN: "8812 Followers"
-  if(!followers) {
-    const enFollower = text.match(/([\d,.]+[KkMmBb]?)\s*[Ff]ollowers?/);
-    if(enFollower) followers = parseNum(enFollower[1]);
-  }
-
-  // fallback: pattern "X กำลังติดตาม Y ผู้ติดตาม Z ถูกใจ" -> เอา Y
-  if(!followers) {
-    const thLine = text.match(/([\d,.]+[KkMmBb]?)\s*กำลังติดตาม\s+([\d,.]+[KkMmBb]?)/);
-    if(thLine) followers = parseNum(thLine[2]);
-  }
-
-  // ---- หา views ---- 
-  // เอาตัวเลขทั้งหมด แล้ว filter
-  const allNums = [];
-  const pat = /([\d,.]+[KkMmBb]?)/g;
-  let m;
-  while((m=pat.exec(text))!==null) {
-    const n = parseNum(m[1]);
-    if(n && n >= 100) allNums.push(n);
-  }
-
-  const unique = [...new Set(allNums)];
-  if(followers) {
-    // views คือตัวเลขที่ไม่ใช่ followers และไม่ใช่ตัวเลขที่ใกล้เคียง following/likes
-    // following มักอยู่ก่อน followers ในข้อความ หา pattern "X Y Z" สามตัวติดกัน
-    const tripleMatch = text.match(/([\d,.]+[KkMmBb]?)\s+\S+\s+([\d,.]+[KkMmBb]?)\s+\S+\s+([\d,.]+[KkMmBb]?)/);
-    const exclude = new Set();
-    if(tripleMatch) {
-      [tripleMatch[1],tripleMatch[2],tripleMatch[3]].forEach(v=>{
-        const n=parseNum(v); if(n) exclude.add(n);
-      });
-    }
-    views = unique.filter(n => !exclude.has(n) && n < 10000000);
-  } else {
-    // ไม่รู้ followers -> เรียงมากไปน้อย เอาตัวที่ 2 เป็น followers ที่เหลือเป็น views
-    const sorted = [...unique].sort((a,b)=>b-a);
-    followers = sorted[1] || sorted[0];
-    views = sorted.slice(3);
-  }
-
-  return { followers, views };
-}
-
-async function scanAllImages() {
-  if(imageList.length === 0){ toast('อัปโหลดรูปก่อน','error'); return; }
-  const btn = document.getElementById('scanBtn');
-  const status = document.getElementById('scanStatus');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>กำลังอ่านตัวเลข...';
-  status.className = 'scan-status';
-  status.classList.remove('hidden');
-  status.textContent = 'กำลังโหลด OCR engine...';
-
-  try {
-    const worker = await Tesseract.createWorker('eng', 1, {
-      logger: m => {
-        if(m.status === 'recognizing text')
-          status.textContent = `กำลังอ่านรูปที่ ${m.jobId||''}... ${Math.round((m.progress||0)*100)}%`;
-      }
-    });
-
-    let allRawText = '';
-    for(let i=0; i<imageList.length; i++) {
-      status.textContent = `สแกนรูปที่ ${i+1}/${imageList.length}...`;
-      const { data: { text } } = await worker.recognize(imageList[i].dataUrl);
-      allRawText += ' ' + text;
-    }
-    await worker.terminate();
-
-    const { followers, views } = parseTikTokText(allRawText);
-    const avgViews = views.length > 0 ? Math.round(views.reduce((a,b)=>a+b,0)/views.length) : null;
-    let filled = [];
-
-    if(followers) {
-      document.getElementById('followers').value = followers;
-      document.getElementById('wrap-followers').classList.add('auto-filled');
-      filled.push('ผู้ติดตาม: ' + fmtN(followers));
-    }
-    if(avgViews) {
-      document.getElementById('avg-views').value = avgViews;
-      document.getElementById('wrap-avgViews').classList.add('auto-filled');
-      filled.push('วิวเฉลี่ย: ' + fmtN(avgViews) + ' (' + views.length + ' คลิป)');
-    }
-
-    if(filled.length) {
-      status.className = 'scan-status success';
-      status.textContent = '✓ ' + filled.join(' · ') + '\nviews ที่เจอ: ' + views.slice(0,12).map(n=>fmtN(n)).join(', ');
-      calculate();
-      toast('✓ อ่านตัวเลขสำเร็จ', 'success');
-    } else {
-      status.className = 'scan-status error';
-      status.textContent = '⚠ ไม่พบตัวเลข — ลองแคปใหม่ให้เห็นชัด หรือกรอกเองในช่องด้านล่าง';
-    }
-  } catch(e) {
-    status.className = 'scan-status error';
-    status.textContent = '✗ เกิดข้อผิดพลาด: ' + e.message;
-  }
-  btn.disabled=false;
-  btn.textContent='🔍 อ่านตัวเลขจากรูป · ' + imageList.length + ' รูป';
-}
-
-// ── ADMIN USER MANAGEMENT ──
-async function addUser() {
-  const email=document.getElementById('new-email').value.trim();
-  const password=document.getElementById('new-password').value;
-  const role=document.getElementById('new-role').value;
-  const btn=document.getElementById('add-user-btn');
-  if(!email||!password){toast('กรอก Email และ Password ด้วย','error');return;}
-  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>กำลังสร้าง...';
-  const {data,error}=await sb.auth.signUp({email,password,options:{data:{role}}});
-  if(error){toast('✗ '+(error.message||'เกิดข้อผิดพลาด'),'error');btn.disabled=false;btn.textContent='+ เพิ่ม User →';return;}
-  if(role==='admin'&&data?.user?.id){
-    await sb.from('profiles').update({role:'admin'}).eq('id',data.user.id);
-  }
-  toast('✓ สร้าง user สำเร็จ — '+email,'success');
-  document.getElementById('new-email').value='';
-  document.getElementById('new-password').value='';
-  btn.disabled=false; btn.textContent='+ เพิ่ม User →';
-  loadUsers();
-}
-async function loadUsers() {
-  document.getElementById('user-table-loading').classList.remove('hidden');
-  document.getElementById('user-table').classList.add('hidden');
-  document.getElementById('user-table-empty').classList.add('hidden');
-  const {data,error}=await sb.from('profiles').select('*').order('created_at',{ascending:false});
-  document.getElementById('user-table-loading').classList.add('hidden');
-  if(error||!data||data.length===0){document.getElementById('user-table-empty').classList.remove('hidden');return;}
-  document.getElementById('user-tbody').innerHTML=data.map(u=>`
-    <tr>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${u.email||'—'}</td>
-      <td><span class="role-badge ${u.role}">${u.role==='admin'?'ADMIN':'USER'}</span></td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">${u.created_at?new Date(u.created_at).toLocaleDateString('th-TH'):'—'}</td>
-      <td>${u.id!==currentUser?.id?`<button class="del-btn" onclick="deleteUser('${u.id}','${u.email}')">×</button>`:'<span style="font-size:11px;color:var(--muted);padding:0 8px">ตัวเอง</span>'}</td>
-    </tr>`).join('');
-  document.getElementById('user-table').classList.remove('hidden');
-}
-async function deleteUser(id,email) {
-  if(!confirm(`ลบ ${email} ออกจากระบบ?`))return;
-  const {error}=await sb.from('profiles').delete().eq('id',id);
-  if(error){toast('✗ ลบไม่ได้: '+error.message,'error');return;}
-  toast('✓ ลบ '+email+' แล้ว','success'); loadUsers();
-}
-
 // ── TIER DEFAULTS ──
 const TIERS={
   nano: {followers:5000,views:2000,eng:7.0,engage:140,price:2000},
@@ -852,8 +563,8 @@ function applyTier(tier,el){
   document.getElementById('price').value=d.price;
   document.getElementById('eng-rate').value=d.eng;
   document.getElementById('eng-rate-val').textContent=d.eng.toFixed(1)+'%';
-  document.getElementById('wrap-followers').classList.remove('auto-filled');
-  document.getElementById('wrap-avgViews').classList.remove('auto-filled');
+  
+  
   calculate();
 }
 function syncEng(){const v=parseFloat(document.getElementById('eng-rate').value);document.getElementById('eng-rate-val').textContent=v.toFixed(1)+'%';calculate();}
@@ -957,6 +668,7 @@ function toast(msg,type=''){
   el.classList.add('show'); clearTimeout(_tt);
   _tt=setTimeout(()=>el.classList.remove('show'),3000);
 }
+
 
 initAuth();
 </script>
